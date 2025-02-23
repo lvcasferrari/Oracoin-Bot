@@ -6,12 +6,17 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import re
 import gspread
+import os
+from google.oauth2.service_account import Credentials
 
-gc = gspread.service_account(filename="firebase-key.json")
+google_creds = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+scopes = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = Credentials.from_service_account_info(google_creds, scopes=scopes)
+gc = gspread.authorize(creds)
 sh = gc.open_by_key("1ERwkHzq_VvKivAzwi3vHcRl90RAz2xC70bVM6pXV1Z8")
 worksheet = sh.sheet1
 
-TOKEN = "7615128166:AAF8z0P0pw2HnhaC1mRk_NXLorFMDHxRbMU"
+TOKEN = os.environ.get("TELEGRAM_TOKEN")
 
 # Inicializar Firebase
 cred = credentials.Certificate("firebase-key.json")
