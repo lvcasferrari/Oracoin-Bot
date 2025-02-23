@@ -1,0 +1,7 @@
+# Credenciais
+firebase-key.json
+google-sheets-credentials.json
+token.json
+
+# Outros
+__pycache__/
