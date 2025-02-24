@@ -10,6 +10,7 @@ import re
 import gspread
 import os
 from google.oauth2.service_account import Credentials
+import asyncio
 
 # Load Google credentials from environment variable
 google_creds = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
@@ -144,6 +145,11 @@ def update_sheet(user_id, expense):
         print(f"Erro no Google Sheets: {str(e)}")
 
 def run_bot():
+    # Create a new event loop for this thread
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    # Build the application
     application = Application.builder().token(TOKEN).build()
     
     # Register handlers
