@@ -11,6 +11,13 @@ import gspread
 import os
 from google.oauth2.service_account import Credentials
 import asyncio
+import logging
+
+# Set up logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 # Load Google credentials from environment variable
 google_creds = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
@@ -96,6 +103,9 @@ async def ajuda(update: Update, context):
     """
     await update.message.reply_text(help_text)
 
+async def test(update: Update, context):
+    await update.message.reply_text("Test command received!")
+
 async def handle_message(update: Update, context):
     try:
         user_id = update.message.from_user.id
@@ -128,9 +138,9 @@ def save_to_firestore(user_id, expense_data):
     try:
         doc_ref = db.collection("users").document(str(user_id)).collection("expenses").document()
         doc_ref.set(expense_data)
-        print(f"Despesa salva no Firestore para o usuário {user_id}.")
+        logger.info(f"Despesa salva no Firestore para o usuário {user_id}.")
     except Exception as e:
-        print(f"Erro ao salvar no Firestore: {e}")
+        logger.error(f"Erro ao salvar no Firestore: {e}")
 
 def update_sheet(user_id, expense):
     try:
@@ -140,9 +150,9 @@ def update_sheet(user_id, expense):
             expense["categoria"],
             expense["data"]
         ])
-        print("Planilha do Google Sheets atualizada com sucesso!")
+        logger.info("Planilha do Google Sheets atualizada com sucesso!")
     except Exception as e:
-        print(f"Erro no Google Sheets: {str(e)}")
+        logger.error(f"Erro no Google Sheets: {str(e)}")
 
 def run_bot():
     # Create a new event loop for this thread
@@ -156,13 +166,14 @@ def run_bot():
     handlers = [
         CommandHandler("start", start),
         CommandHandler("ajuda", ajuda),
+        CommandHandler("test", test),  # Add this line
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     ]
     
     for handler in handlers:
         application.add_handler(handler)
     
-    print("Bot is running...")
+    logger.info("Bot is running and polling for updates...")
     application.run_polling()
 
 if __name__ == "__main__":
