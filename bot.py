@@ -12,6 +12,10 @@ import os
 from google.oauth2.service_account import Credentials
 import asyncio
 import logging
+import nest_asyncio  # Import nest_asyncio
+
+# Apply nest_asyncio to allow nested event loops
+nest_asyncio.apply()
 
 # Set up logging
 logging.basicConfig(
