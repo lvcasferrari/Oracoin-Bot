@@ -9,6 +9,7 @@ import gspread
 import os
 from google.oauth2.service_account import Credentials
 
+# Load Google credentials from environment variable
 google_creds = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
 scopes = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = Credentials.from_service_account_info(google_creds, scopes=scopes)
@@ -19,8 +20,16 @@ worksheet = sh.sheet1
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 
-# Inicializar Firebase
-firebase_creds = json.loads(os.environ.get("FIREBASE_CREDENTIALS"))
+# Load Firebase credentials from environment variable
+firebase_creds_json = os.environ.get("FIREBASE_CREDENTIALS")
+if not firebase_creds_json:
+    raise ValueError("The FIREBASE_CREDENTIALS environment variable is not set.")
+
+try:
+    firebase_creds = json.loads(firebase_creds_json)
+except json.JSONDecodeError as e:
+    raise ValueError("Invalid JSON in FIREBASE_CREDENTIALS environment variable.") from e
+
 cred = credentials.Certificate(firebase_creds)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
