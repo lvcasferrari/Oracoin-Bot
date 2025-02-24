@@ -13,13 +13,15 @@ google_creds = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
 scopes = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 creds = Credentials.from_service_account_info(google_creds, scopes=scopes)
 gc = gspread.authorize(creds)
+
 sh = gc.open_by_key("1ERwkHzq_VvKivAzwi3vHcRl90RAz2xC70bVM6pXV1Z8")
 worksheet = sh.sheet1
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 
 # Inicializar Firebase
-cred = credentials.Certificate("firebase-key.json")
+firebase_creds = json.loads(os.environ.get("FIREBASE_CREDENTIALS"))
+cred = credentials.Certificate(firebase_creds)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
