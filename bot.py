@@ -154,11 +154,11 @@ def update_sheet(user_id, expense):
     except Exception as e:
         logger.error(f"Erro no Google Sheets: {str(e)}")
 
-def run_bot():
-    # Create a new event loop for this thread
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+def run_flask():
+    # Start the Flask server on port 8080
+    app.run(host="0.0.0.0", port=8080)
 
+async def run_bot():
     # Build the application
     application = Application.builder().token(TOKEN).build()
     
@@ -174,20 +174,12 @@ def run_bot():
         application.add_handler(handler)
     
     logger.info("Bot is running and polling for updates...")
-    
-    try:
-        # Run the bot using the event loop
-        loop.run_until_complete(application.run_polling())
-    except Exception as e:
-        logger.error(f"Error in run_polling: {e}")
-    finally:
-        # Clean up the event loop
-        loop.close()
+    await application.run_polling()
 
 if __name__ == "__main__":
-    # Start the Telegram bot in a separate thread
-    bot_thread = Thread(target=run_bot)
-    bot_thread.start()
+    # Start the Flask server in a separate thread
+    flask_thread = Thread(target=run_flask)
+    flask_thread.start()
     
-    # Start the Flask server on port 8080
-    app.run(host="0.0.0.0", port=8080)
+    # Run the Telegram bot in the main thread
+    asyncio.run(run_bot())
