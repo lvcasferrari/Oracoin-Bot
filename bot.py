@@ -166,7 +166,7 @@ def run_bot():
     handlers = [
         CommandHandler("start", start),
         CommandHandler("ajuda", ajuda),
-        CommandHandler("test", test),  # Add this line
+        CommandHandler("test", test),
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
     ]
     
@@ -174,7 +174,10 @@ def run_bot():
         application.add_handler(handler)
     
     logger.info("Bot is running and polling for updates...")
-    application.run_polling()
+    try:
+        application.run_polling()
+    except Exception as e:
+        logger.error(f"Error in run_polling: {e}")
 
 if __name__ == "__main__":
     # Start the Telegram bot in a separate thread
