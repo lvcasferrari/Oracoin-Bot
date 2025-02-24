@@ -174,10 +174,15 @@ def run_bot():
         application.add_handler(handler)
     
     logger.info("Bot is running and polling for updates...")
+    
     try:
-        application.run_polling()
+        # Run the bot using the event loop
+        loop.run_until_complete(application.run_polling())
     except Exception as e:
         logger.error(f"Error in run_polling: {e}")
+    finally:
+        # Clean up the event loop
+        loop.close()
 
 if __name__ == "__main__":
     # Start the Telegram bot in a separate thread
