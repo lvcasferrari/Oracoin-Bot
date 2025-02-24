@@ -1,3 +1,5 @@
+from flask import Flask
+from threading import Thread
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import json
@@ -18,7 +20,10 @@ gc = gspread.authorize(creds)
 sh = gc.open_by_key("1ERwkHzq_VvKivAzwi3vHcRl90RAz2xC70bVM6pXV1Z8")
 worksheet = sh.sheet1
 
+# Load Telegram token from environment variable
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
+if not TOKEN:
+    raise ValueError("The TELEGRAM_TOKEN environment variable is not set.")
 
 # Load Firebase credentials from environment variable
 firebase_creds_json = os.environ.get("FIREBASE_CREDENTIALS")
@@ -34,53 +39,14 @@ cred = credentials.Certificate(firebase_creds)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# Função para atualizar a planilha do Google Sheets
-def update_sheet(user_id, expense):
-    try:
-        worksheet.append_row([
-            str(user_id), 
-            expense["valor"],
-            expense["categoria"],
-            expense["data"]
-        ])
-        print("Planilha do Google Sheets atualizada com sucesso!")
-    except Exception as e:
-        print(f"Erro no Google Sheets: {str(e)}")
+# Flask app
+app = Flask(__name__)
 
-# Função para salvar dados no Firestore
-def save_to_firestore(user_id, expense_data):
-    """
-    Salva os dados da despesa no Firestore.
-    Args:
-        user_id (str): ID do usuário no Telegram.
-        expense_data (dict): Dados da despesa no formato {'valor': float, 'categoria': str, 'data': str}.
-    """
-    try:
-        doc_ref = db.collection("users").document(str(user_id)).collection("expenses").document()
-        doc_ref.set(expense_data)
-        print(f"Despesa salva no Firestore para o usuário {user_id}.")
-    except Exception as e:
-        print(f"Erro ao salvar no Firestore: {e}")
+@app.route("/")
+def home():
+    return "Bot is running!"
 
-# Função para responder ao comando /start
-async def start(update: Update, context):
-    await update.message.reply_text("Olá! Envie uma despesa no formato: 'Gastei R$20 no mercado'.")
-
-# Função para responder ao comando /ajuda
-async def ajuda(update: Update, context):
-    help_text = """
-    ✨ Como usar:
-    Envie suas despesas como:
-    - 'Gastei R$20 no mercado'
-    - 'Despesa de R$150 com combustível'
-    - 'Almoço R$35 hoje'
-    
-    📝 Formato aceito:
-    Valor | Categoria | Data (opcional)
-    """
-    await update.message.reply_text(help_text)
-
-# Função para processar a mensagem localmente (sem OpenAI)
+# Telegram bot functions
 def parse_expense(text: str) -> dict:
     """
     Extrai o valor e a categoria da mensagem do usuário.
@@ -113,7 +79,22 @@ def parse_expense(text: str) -> dict:
     except Exception as e:
         raise ValueError(f"Erro ao processar a mensagem: {str(e)}")
 
-# Lidar com mensagens do usuário
+async def start(update: Update, context):
+    await update.message.reply_text("Olá! Envie uma despesa no formato: 'Gastei R$20 no mercado'.")
+
+async def ajuda(update: Update, context):
+    help_text = """
+    ✨ Como usar:
+    Envie suas despesas como:
+    - 'Gastei R$20 no mercado'
+    - 'Despesa de R$150 com combustível'
+    - 'Almoço R$35 hoje'
+    
+    📝 Formato aceito:
+    Valor | Categoria | Data (opcional)
+    """
+    await update.message.reply_text(help_text)
+
 async def handle_message(update: Update, context):
     try:
         user_id = update.message.from_user.id
@@ -136,11 +117,36 @@ async def handle_message(update: Update, context):
         error_message = f"❌ Erro: {str(e)}\nEnvie no formato: 'Gastei R$50 no mercado hoje'"
         await update.message.reply_text(error_message)
 
-# Configurar e iniciar o bot
-def main():
+def save_to_firestore(user_id, expense_data):
+    """
+    Salva os dados da despesa no Firestore.
+    Args:
+        user_id (str): ID do usuário no Telegram.
+        expense_data (dict): Dados da despesa no formato {'valor': float, 'categoria': str, 'data': str}.
+    """
+    try:
+        doc_ref = db.collection("users").document(str(user_id)).collection("expenses").document()
+        doc_ref.set(expense_data)
+        print(f"Despesa salva no Firestore para o usuário {user_id}.")
+    except Exception as e:
+        print(f"Erro ao salvar no Firestore: {e}")
+
+def update_sheet(user_id, expense):
+    try:
+        worksheet.append_row([
+            str(user_id), 
+            expense["valor"],
+            expense["categoria"],
+            expense["data"]
+        ])
+        print("Planilha do Google Sheets atualizada com sucesso!")
+    except Exception as e:
+        print(f"Erro no Google Sheets: {str(e)}")
+
+def run_bot():
     application = Application.builder().token(TOKEN).build()
     
-    # Registar handlers
+    # Register handlers
     handlers = [
         CommandHandler("start", start),
         CommandHandler("ajuda", ajuda),
@@ -150,8 +156,13 @@ def main():
     for handler in handlers:
         application.add_handler(handler)
     
-    print("Bot em execução...")
+    print("Bot is running...")
     application.run_polling()
 
 if __name__ == "__main__":
-    main()
+    # Start the Telegram bot in a separate thread
+    bot_thread = Thread(target=run_bot)
+    bot_thread.start()
+    
+    # Start the Flask server on port 8080
+    app.run(host="0.0.0.0", port=8080)
