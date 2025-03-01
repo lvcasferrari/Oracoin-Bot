@@ -61,35 +61,91 @@ def home():
 # Telegram bot functions
 def parse_expense(text: str) -> dict:
     """
-    Extrai o valor e a categoria da mensagem do usuário.
+    Extracts expense details from user input.
     Args:
-        text (str): Mensagem do usuário.
+        text (str): User's message.
     Returns:
-        dict: Dados da despesa no formato {'valor': float, 'categoria': str, 'data': str}.
+        dict: Expense details including amount, category, date, description, etc.
     """
     try:
-        # Extrair valor usando regex (procura por R$ seguido de números)
-        valor_match = re.search(r"R\$\s*(\d+[\.,]?\d*)", text)
-        if not valor_match:
-            raise ValueError("Valor não encontrado na mensagem.")
-        
-        # Converter valor para float
-        valor = float(valor_match.group(1).replace(",", "."))
+        # Regex patterns for extracting details
+        amount_pattern = r"(?P<amount>\d+[\.,]?\d*)\s*(?:reais|rs|r\$)?"
+        category_pattern = r"(?:em|no|para|com)\s+(?P<category>\w+)"
+        description_pattern = r"(?:para|sobre|descrição|em)\s+(?P<description>.+?)(?:\s+em|\s+no|\s+para|\s+com|$)"
+        date_pattern = r"(?P<date>\d{1,2}/\d{1,2}/\d{4})"
+        payment_method_pattern = r"(?:paguei|pago)\s+(?:com|em)\s+(?P<payment_method>débito|crédito|pix|dinheiro|transferência\s+bancária)"
+        installment_pattern = r"(?:em\s+)?(?P<installments_number>\d+)x"
+        location_pattern = r"(?:em|no)\s+(?P<location>.+?)(?:\s+para|\s+com|$)"
+        supplier_pattern = r"(?:na|no)\s+(?P<supplier>.+?)(?:\s+em|\s+no|$)"
+        currency_pattern = r"(?P<currency>\bUSD\b|\bEUR\b|\bBRL\b)"
 
-        # Extrair categoria (procura por palavras após "no", "em", "com", etc.)
-        categoria_match = re.search(r"(no|em|com)\s+(\w+)", text, re.IGNORECASE)
-        categoria = categoria_match.group(2).lower() if categoria_match else "outros"
+        # Extract amount
+        amount_match = re.search(amount_pattern, text, re.IGNORECASE)
+        if not amount_match:
+            raise ValueError("Amount not found. Use: 'Gastei R$20 no mercado'.")
+        amount = float(amount_match.group("amount").replace(",", "."))
 
-        # Definir data atual
-        data = datetime.now().strftime("%d/%m/%Y")
+        # Extract category
+        category_match = re.search(category_pattern, text, re.IGNORECASE)
+        category = category_match.group("category").lower() if category_match else "outros"
 
+        # Extract description
+        description_match = re.search(description_pattern, text, re.IGNORECASE)
+        description = description_match.group("description").strip() if description_match else None
+
+        # Extract date (if provided)
+        date_match = re.search(date_pattern, text)
+        date = date_match.group("date") if date_match else datetime.now().strftime("%d/%m/%Y")
+
+        # Extract payment method
+        payment_method_match = re.search(payment_method_pattern, text, re.IGNORECASE)
+        payment_method = payment_method_match.group("payment_method").lower() if payment_method_match else None
+
+        # Extract installments
+        installment_match = re.search(installment_pattern, text, re.IGNORECASE)
+        installments_number = int(installment_match.group("installments_number")) if installment_match else 0
+        installment = installments_number > 1
+
+        # Extract location
+        location_match = re.search(location_pattern, text, re.IGNORECASE)
+        location = location_match.group("location").strip() if location_match else None
+
+        # Extract supplier
+        supplier_match = re.search(supplier_pattern, text, re.IGNORECASE)
+        supplier = supplier_match.group("supplier").strip() if supplier_match else None
+
+        # Extract currency (default is BRL)
+        currency_match = re.search(currency_pattern, text, re.IGNORECASE)
+        currency = currency_match.group("currency") if currency_match else "BRL"
+
+        # Return structured expense data
         return {
-            "valor": valor,
-            "categoria": categoria,
-            "data": data
+            "amount": amount,
+            "category": category,
+            "date": date,
+            "description": description,
+            "payment_method": payment_method,
+            "installment": installment,
+            "installments_number": installments_number,
+            "location": location,
+            "supplier": supplier,
+            "notes": None,  # To be filled by user in follow-up
+            "tags": [],  # To be filled by user in follow-up
+            "geolocation": None,  # To be filled by user in follow-up
+            "receipt_link": None,  # To be filled by user in follow-up
+            "recurrence": None,  # To be filled by user in follow-up
+            "currency": currency,
+            "expense_status": "pago",  # Default status
+            "budget_alignment": None  # To be filled by user in follow-up
         }
     except Exception as e:
-        raise ValueError(f"Erro ao processar a mensagem: {str(e)}")
+        raise ValueError(f"Error parsing expense: {str(e)}")
+
+
+# Example usage
+input_text = "Gastei R$300 no Posto ABC para abastecer o carro com combustível comum, paguei com débito em 20/05/2024."
+parsed_expense = parse_expense(input_text)
+print(parsed_expense)
 
 async def start(update: Update, context):
     await update.message.reply_text("Olá! Envie uma despesa no formato: 'Gastei R$20 no mercado'.")
