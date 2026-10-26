@@ -1,7 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { applyChanges, evaluate, monthOf, param, scenarioRows, type Scenario, type ScenarioChange, type ScenarioResult, type ScenarioRows } from '../engine';
+import {
+  applyChanges,
+  evaluate,
+  monthOf,
+  param,
+  scenarioRows,
+  suggestActions,
+  type Action,
+  type Scenario,
+  type ScenarioChange,
+  type ScenarioResult,
+  type ScenarioRows,
+} from '../engine';
 import { commitScenario, listScenarios, removeScenario, saveScenario } from '../db/repos';
+import { ActionsList } from '../components/ActionsList';
 import { EmptyState } from '../components/EmptyState';
 import { Button, FormError, FormScreen, Input, trySave } from '../components/form';
 import { Card } from '../components/ui';
@@ -19,6 +32,7 @@ export function SimuladorScreen() {
   const [loaded, setLoaded] = useState<Scenario | null>(null);
   const [saved, setSaved] = useState<Scenario[]>([]);
   const [result, setResult] = useState<ScenarioResult | null>(null);
+  const [actions, setActions] = useState<Action[]>([]);
   const [pending, setPending] = useState<{ rows: ScenarioRows; lines: string[] } | null>(null);
   const [naming, setNaming] = useState<string | null>(null);
   const [message, setMessage] = useState<string>();
@@ -50,7 +64,9 @@ export function SimuladorScreen() {
     }
     const timer = setTimeout(() => {
       try {
-        setResult(evaluate(profile, { id: 'preview', name: 'preview', changes: current }, today));
+        const preview = { id: 'preview', name: 'preview', changes: current };
+        setResult(evaluate(profile, preview, today));
+        setActions(suggestActions(profile, preview, today));
       } catch (e) {
         console.warn('[Simulador] evaluate', e);
         setResult(null);
@@ -167,7 +183,7 @@ export function SimuladorScreen() {
               <SimForm type={type} draft={draft} onChange={(f, v) => setDraft((d) => ({ ...d, [f]: v }))} errors={errors} cards={profile.cards} />
             ))}
 
-          {result && <ScenarioResultCard result={result} />}
+          {result && <ScenarioResultCard result={result} actions={<ActionsList actions={actions} />} />}
 
           {result && !pending && (
             <>

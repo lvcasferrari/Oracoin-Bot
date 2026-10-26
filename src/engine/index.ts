@@ -12,4 +12,5 @@ export * from './upkeep';
 export * from './goals';
 export * from './score';
 export * from './scenarios';
+export * from './actions';
 export * from './simulator';
