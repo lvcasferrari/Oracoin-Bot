@@ -1,7 +1,8 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthOf, profileBalance } from '../engine';
+import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthOf, profileBalance, suggestActions } from '../engine';
+import { ActionsList } from '../components/ActionsList';
 import { Disclaimer } from '../components/Disclaimer';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/form';
@@ -32,6 +33,8 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
   });
   const next = nextIndex >= 0 ? events[nextIndex] : null;
   const balanceOnDue = next ? points[nextIndex].balance : null;
+  // Spec 07: "1 insight e 1 ação sugerida".
+  const topAction = suggestActions(profile, null, today)[0];
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -74,6 +77,13 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
             </>
           )}
           <Button title="Registrar pagamento" kind="secondary" onPress={() => navigation.navigate('PayInvoice', { cardId: next.refId, dueMonth: monthOf(next.date) })} />
+        </Card>
+      )}
+
+      {topAction && (
+        <Card>
+          <Text style={styles.label}>Uma ação sugerida</Text>
+          <ActionsList actions={[topAction]} />
         </Card>
       )}
 

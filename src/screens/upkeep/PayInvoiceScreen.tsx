@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { cents, param, projectedInvoice, worstCase, type Invoice } from '../../engine';
+import { cents, param, projectedInvoice, suggestActions, worstCase, type Invoice } from '../../engine';
 import { saveInvoice } from '../../db/repos';
+import { ActionsList } from '../../components/ActionsList';
 import { Disclaimer } from '../../components/Disclaimer';
 import { Button, Chips, FormError, FormScreen, Input, MoneyInput, trySave } from '../../components/form';
 import { useForm } from '../../components/useForm';
@@ -59,6 +60,8 @@ export function PayInvoiceScreen({ route, navigation }: NativeStackScreenProps<{
     f.draft.mode === 'partial' && amount !== null && paid !== null && paid < amount && Number.isInteger(months) && months >= 1 && months <= 24
       ? worstCase(cents(amount - paid), months, profile.parameters, today)
       : null;
+  // Spec catalog #1 (move the due date) for this card, shown next to the worst case.
+  const otherExits = preview ? suggestActions(profile, null, today).filter((a) => a.cardId === cardId && a.id === 1) : [];
 
   return (
     <FormScreen>
@@ -94,6 +97,12 @@ export function PayInvoiceScreen({ route, navigation }: NativeStackScreenProps<{
               </Text>
             ))}
           </View>
+          {otherExits.length > 0 && (
+            <>
+              <Text style={styles.strong}>Outras saídas</Text>
+              <ActionsList actions={otherExits} />
+            </>
+          )}
           <Disclaimer />
         </Card>
       )}

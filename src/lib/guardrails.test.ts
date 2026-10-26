@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DISCLAIMER } from './copy';
+import { BANNED, DISCLAIMER } from './copy';
 
 const SRC = join(__dirname, '..');
 
@@ -14,15 +14,13 @@ function files(dir: string): string[] {
 }
 const source = files(SRC).map((path) => ({ path: relative(SRC, path), text: readFileSync(path, 'utf8') }));
 
-/** Blame and credit/investment words the app must never say (spec 01 principle 5, spec 06 rules 1–2). */
-export const BANNED = ['gastou demais', 'irrespons', 'culpa', 'contrate', 'pré-aprovado', 'pre-aprovado', 'invista', 'aplique', 'cdb', 'empréstimo na hora'];
-
 describe('guardrails', () => {
   it('uses the exact disclaimer text from spec 06', () => {
     expect(DISCLAIMER).toBe('Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito.');
   });
   it('never uses blame, credit-offer or investment wording', () => {
-    for (const { path, text } of source) {
+    // lib/copy.ts holds the list itself.
+    for (const { path, text } of source.filter((f) => f.path !== 'lib/copy.ts')) {
       const lower = text.toLowerCase();
       for (const word of BANNED) expect(lower.includes(word), `${path} contains "${word}"`).toBe(false);
     }
