@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
   body: { fontSize: 15 },
   cost: { fontSize: 13, opacity: 0.8 },
   hint: { fontSize: 12, opacity: 0.7 },
-  link: { minHeight: 40, justifyContent: 'center' },
-  linkText: { fontSize: 14, color: '#2f6f4f', fontWeight: '500' },
+  link: { minHeight: 44, justifyContent: 'center' },
+  // Darker green on the tinted item keeps 4.5:1 contrast.
+  linkText: { fontSize: 14, color: '#265a40', fontWeight: '500' },
 });

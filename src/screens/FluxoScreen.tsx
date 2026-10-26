@@ -4,6 +4,7 @@ import { addMonths, cents, criticalMonth, dailyView, dueCalendar, monthOf, month
 import { Disclaimer } from '../components/Disclaimer';
 import { DueCalendar } from '../components/DueCalendar';
 import { EmptyState } from '../components/EmptyState';
+import { announce } from '../components/form';
 import { Card, Money, Pill } from '../components/ui';
 import { shortMonth } from '../lib/dateInput';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
@@ -26,6 +27,10 @@ export function FluxoScreen() {
   const first = rows[0].month;
   const last = rows[rows.length - 1].month;
   const shown = month < first ? first : month > last ? last : month;
+  const goTo = (next: string) => {
+    setMonth(next);
+    announce(shortMonth(next));
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -54,7 +59,7 @@ export function FluxoScreen() {
                 setMode('dia');
               }}
               accessibilityRole="button"
-              accessibilityLabel={`Ver ${shortMonth(r.month)} dia a dia`}
+              accessibilityHint="Abre o dia a dia deste mês"
             >
               <Card>
                 <View style={styles.rowHead}>
@@ -78,11 +83,13 @@ export function FluxoScreen() {
 
       {mode !== 'mes' && (
         <View style={styles.nav}>
-          <Pressable onPress={() => setMonth(addMonths(shown, -1))} disabled={shown <= first} style={styles.navButton} accessibilityRole="button" accessibilityLabel="Mês anterior">
+          <Pressable onPress={() => goTo(addMonths(shown, -1))} disabled={shown <= first} style={styles.navButton} accessibilityRole="button" accessibilityLabel="Mês anterior">
             <Text style={[styles.navText, shown <= first && styles.disabled]}>‹</Text>
           </Pressable>
-          <Text style={styles.month}>{shortMonth(shown)}</Text>
-          <Pressable onPress={() => setMonth(addMonths(shown, 1))} disabled={shown >= last} style={styles.navButton} accessibilityRole="button" accessibilityLabel="Próximo mês">
+          <Text style={styles.month} accessibilityRole="header">
+            {shortMonth(shown)}
+          </Text>
+          <Pressable onPress={() => goTo(addMonths(shown, 1))} disabled={shown >= last} style={styles.navButton} accessibilityRole="button" accessibilityLabel="Próximo mês">
             <Text style={[styles.navText, shown >= last && styles.disabled]}>›</Text>
           </Pressable>
         </View>
@@ -110,7 +117,7 @@ function DailyList({ month }: { month: string }) {
           <View key={`${r.date}-${r.refId}-${i}`} style={[styles.dayRow, isLow && styles.dayLow]}>
             <Text style={styles.day}>{r.date.slice(8)}</Text>
             <View style={styles.flex}>
-              <Text style={styles.body} numberOfLines={1}>
+              <Text style={styles.body}>
                 {r.label}
                 {r.estimated ? ' (estimado)' : ''}
               </Text>
@@ -129,7 +136,7 @@ function DailyList({ month }: { month: string }) {
 
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 10 },
-  segment: { flexDirection: 'row', borderRadius: 12, borderWidth: 1, borderColor: '#8886', overflow: 'hidden' },
+  segment: { flexDirection: 'row', borderRadius: 12, borderWidth: 1, borderColor: '#767676', overflow: 'hidden' },
   segmentItem: { flex: 1, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   segmentActive: { backgroundColor: '#2f6f4f' },
   segmentText: { fontSize: 14 },
@@ -145,7 +152,7 @@ const styles = StyleSheet.create({
   dayRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingVertical: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: '#8884' },
   dayLow: { backgroundColor: 'rgba(255,214,214,0.5)' },
   lowText: { fontSize: 12, fontWeight: '600' },
-  day: { width: 28, fontVariant: ['tabular-nums'], opacity: 0.7 },
+  day: { minWidth: 28, fontVariant: ['tabular-nums'], opacity: 0.75 },
   flex: { flex: 1 },
   right: { alignItems: 'flex-end' },
   balance: { fontWeight: '600' },

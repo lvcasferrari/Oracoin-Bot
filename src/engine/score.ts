@@ -44,7 +44,9 @@ export function healthScore(profile: Profile, today: string): HealthScore {
   const ratio = commitmentRatio(profile, month, today);
   const yellow = p('commitment_band_yellow');
   const red = p('commitment_band_red');
-  const liberdade = income <= 0 || recentPartial ? 0 : clamp((red - ratio) / (red - yellow), 0, 1) * 100;
+  // Bands edited into the same value would divide by zero; then it is simply above or below the cut.
+  const freedom = red > yellow ? clamp((red - ratio) / (red - yellow), 0, 1) : ratio < red ? 1 : 0;
+  const liberdade = income <= 0 || recentPartial ? 0 : freedom * 100;
 
   const parts: Record<ScorePart, number> = {
     controle: Math.round(controle),

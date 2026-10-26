@@ -5,6 +5,7 @@ import type { SqlDriver } from '../db/driver';
 import { loadProfile } from '../db/loadProfile';
 import { openDb } from '../db/open';
 import { getProfileMeta, type ProfileMeta } from '../db/repos/profileMeta';
+import { logError } from '../lib/log';
 
 type Status = 'loading' | 'ready' | 'error';
 
@@ -43,7 +44,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setMeta(loadedMeta);
       setStatus('ready');
     })().catch((error: unknown) => {
-      console.warn('[AppData] could not open the database', error);
+      logError('[AppData] could not open the database', error);
       if (alive) setStatus('error');
     });
     return () => {

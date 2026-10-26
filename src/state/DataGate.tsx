@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAnnounce } from '../components/form';
 import { LOAD_ERROR } from '../lib/copy';
 import { useAppData } from './AppData';
 
 /** Shows loading and error states until the on-device data is open. */
 export function DataGate({ children }: { children: ReactNode }) {
   const { status, retry } = useAppData();
+  useAnnounce(status === 'error' ? LOAD_ERROR : undefined);
   if (status === 'ready') return <>{children}</>;
   if (status === 'loading') {
     return (
@@ -16,9 +18,7 @@ export function DataGate({ children }: { children: ReactNode }) {
   }
   return (
     <View style={styles.center}>
-      <Text style={styles.text} accessibilityLiveRegion="polite">
-        {LOAD_ERROR}
-      </Text>
+      <Text style={styles.text}>{LOAD_ERROR}</Text>
       <Pressable style={styles.button} onPress={retry} accessibilityRole="button">
         <Text style={styles.buttonText}>Tentar de novo</Text>
       </Pressable>

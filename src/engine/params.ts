@@ -7,12 +7,18 @@ export class MissingParameterError extends Error {
   }
 }
 
-/** The row of `key` with the latest `effectiveFrom` on or before `onDate`. Never defaults. */
+/** Source of every parameter row the user edits. */
+export const USER_PARAMETER_SOURCE = 'editado por você';
+
+/**
+ * The row of `key` with the latest `effectiveFrom` on or before `onDate`; on the same date the
+ * user's edit wins over the seeded default. Never defaults.
+ */
 export function paramRow(params: Parameter[], key: ParamKey, onDate: string): Parameter {
   let best: Parameter | undefined;
   for (const p of params) {
     if (p.key !== key || p.effectiveFrom > onDate) continue;
-    if (!best || p.effectiveFrom > best.effectiveFrom) best = p;
+    if (!best || p.effectiveFrom > best.effectiveFrom || (p.effectiveFrom === best.effectiveFrom && p.source === USER_PARAMETER_SOURCE)) best = p;
   }
   if (!best) throw new MissingParameterError(key, onDate);
   return best;
@@ -49,4 +55,5 @@ export const DEFAULT_PARAMETERS: Parameter[] = [
   { key: 'rotativo_lookback_months', value: 3, effectiveFrom: SET, source: APP },
   { key: 'variable_estimate_uncertainty', value: 0.2, effectiveFrom: SET, source: 'suposição do app' },
   { key: 'purchase_on_closing_day_next_invoice', value: 1, effectiveFrom: SET, source: 'sem fonte citável; editável (0 ou 1)' },
+  { key: 'best_day_max_wait_days', value: 7, effectiveFrom: '2026-10-27', source: APP },
 ];

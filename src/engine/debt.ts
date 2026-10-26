@@ -16,36 +16,47 @@ function check(principal: number, rate: number, months: number): void {
   if (!Number.isInteger(months) || months < 1) throw new RangeError('months must be a positive integer');
 }
 
-/** Price (French) system: fixed payment PMT = P·i / (1 − (1+i)^−n). The last row absorbs rounding. */
+/**
+ * Rounds an exact schedule to cents through running totals: each row is the difference of two
+ * rounded running sums, so rows never go negative, totals stay exact and the final balance is 0.
+ */
+function roundSchedule(exact: { payment: number; amortization: number }[], principal: number): ScheduleRow[] {
+  let paid = 0;
+  let amortized = 0;
+  let paidCents = 0;
+  let amortizedCents = 0;
+  return exact.map((row, i) => {
+    paid += row.payment;
+    amortized += row.amortization;
+    const nextPaid = cents(paid);
+    const nextAmortized = i === exact.length - 1 ? cents(principal) : Math.min(cents(amortized), cents(principal));
+    const payment = cents(nextPaid - paidCents);
+    const amortization = cents(nextAmortized - amortizedCents);
+    paidCents = nextPaid;
+    amortizedCents = nextAmortized;
+    return { k: i + 1, payment, interest: cents(payment - amortization), amortization, balance: cents(cents(principal) - amortizedCents) };
+  });
+}
+
+/** Price (French) system: fixed payment PMT = P·i / (1 − (1+i)^−n). */
 export function priceSchedule(principal: number, rate: number, months: number): ScheduleRow[] {
   check(principal, rate, months);
   const pmt = rate === 0 ? principal / months : (principal * rate) / (1 - (1 + rate) ** -months);
-  const rows: ScheduleRow[] = [];
-  let balance = cents(principal);
-  for (let k = 1; k <= months; k++) {
-    const interest = cents(balance * rate);
-    const amortization = k === months ? balance : cents(cents(pmt) - interest);
-    const payment = cents(amortization + interest);
-    balance = cents(balance - amortization);
-    rows.push({ k, payment, interest, amortization, balance });
-  }
-  return rows;
+  let balance = principal;
+  const exact = Array.from({ length: months }, () => {
+    const amortization = pmt - balance * rate;
+    balance -= amortization;
+    return { payment: pmt, amortization };
+  });
+  return roundSchedule(exact, principal);
 }
 
-/** SAC system: constant amortization P/n, interest on the remaining balance. The last row absorbs rounding. */
+/** SAC system: constant amortization P/n, interest on the remaining balance. */
 export function sacSchedule(principal: number, rate: number, months: number): ScheduleRow[] {
   check(principal, rate, months);
-  const constant = cents(principal / months);
-  const rows: ScheduleRow[] = [];
-  let balance = cents(principal);
-  for (let k = 1; k <= months; k++) {
-    const interest = cents(balance * rate);
-    const amortization = k === months ? balance : constant;
-    const payment = cents(amortization + interest);
-    balance = cents(balance - amortization);
-    rows.push({ k, payment, interest, amortization, balance });
-  }
-  return rows;
+  const amortization = principal / months;
+  const exact = Array.from({ length: months }, (_, k) => ({ payment: amortization + (principal - amortization * k) * rate, amortization }));
+  return roundSchedule(exact, principal);
 }
 
 export const debtSchedule = (debt: Debt): ScheduleRow[] =>

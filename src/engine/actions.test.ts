@@ -28,7 +28,8 @@ describe('action catalog', () => {
   });
   it('#3 compares paying in full with the capped cost of paying part', () => {
     const [pay] = suggestActions(beforePayday(), null, TODAY).filter((a) => a.id === 3);
-    expect(pay.message).toMatch(/deixaria faltar R\$\s?2\.000,00/);
+    expect(pay.title).toBe('Se pagar só uma parte: quanto custa');
+    expect(pay.message).toMatch(/faltariam R\$\s?2\.000,00/);
     expect(pay.impact.totalCost).toBeGreaterThan(0);
     expect(pay.assumptions.map((a) => a.key)).toContain('encargos_cap_ratio');
   });

@@ -17,6 +17,10 @@ describe('parameter display and editing', () => {
     expect(parseParamInput('rotativo_monthly_rate', '15,18')).toBe(0.1518);
     expect(parseParamInput('rotativo_monthly_rate', '12%')).toBe(0.12);
   });
+  it('reads a dot decimal the same as a comma', () => {
+    expect(parseParamInput('rotativo_monthly_rate', '1.5')).toBe(0.015);
+    expect(parseParamInput('rotativo_monthly_rate', '1,5')).toBe(0.015);
+  });
   it('rejects values out of range or of the wrong kind', () => {
     expect(parseParamInput('projection_months', '12')).toBeNull(); // spec 05: at least 18
     expect(parseParamInput('projection_months', '18,5')).toBeNull();

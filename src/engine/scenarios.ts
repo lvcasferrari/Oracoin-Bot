@@ -1,10 +1,10 @@
-import { addDays, addMonths, cents, monthDiff, monthOf } from './dates';
+import { addDays, addMonths, cents, dateInMonth, monthDiff, monthOf } from './dates';
 import { invoiceMonthForCharge } from './cycle';
 import { debtSchedule, debtSummary, priceSchedule, type DebtSummary } from './debt';
 import { buildEvents, criticalDay, entryOccurrence, profileBalance, projectedInvoice, type BalancePoint } from './events';
 import { contributions, goalDelays, type GoalDelay } from './goals';
 import { availableLimit, type LimitView } from './limit';
-import { essentialOutflows, freeMargin, netIncome } from './metrics';
+import { essentialOutflows, freeMargin, netIncome, referenceIncome } from './metrics';
 import { param, paramRow } from './params';
 import { worstCase, type WorstCase } from './rotativo';
 import { splitInstallments, verdictFor, type Verdict } from './simulator';
@@ -67,9 +67,12 @@ export function applyChanges(profile: Profile, changes: ScenarioChange[], today:
         }
         break;
       }
-      case 'subscription':
-        p.entries.push({ id: makeId('entry'), kind: 'out', name: c.name ?? 'Nova assinatura', amount: c.amount, day: c.day, recurrence: 'monthly', startMonth: month, cardId: c.cardId });
+      case 'subscription': {
+        // A day that already passed this month starts next month (no phantom charge in the past).
+        const startMonth = dateInMonth(month, c.day) >= free ? month : addMonths(month, 1);
+        p.entries.push({ id: makeId('entry'), kind: 'out', name: c.name ?? 'Nova assinatura', amount: c.amount, day: c.day, recurrence: 'monthly', startMonth, cardId: c.cardId });
         break;
+      }
       case 'incomeChange': {
         const to = addMonths(c.startMonth, c.months - 1);
         if (c.deltaPct !== undefined) {
@@ -120,7 +123,22 @@ export function applyChanges(profile: Profile, changes: ScenarioChange[], today:
       }
     }
   }
-  return p;
+  return addToEstimatedInvoices(profile, p, today);
+}
+
+/**
+ * A stored 'estimada' row is the user's guess of the whole invoice and hides the projection, so
+ * charges a scenario adds to that card and month (installments, card entries) are added to it.
+ */
+function addToEstimatedInvoices(before: Profile, after: Profile, today: string): Profile {
+  const invoices = after.invoices.map((row) => {
+    if (row.origin !== 'estimada' || row.status !== 'fechada') return row;
+    const card = after.cards.find((c) => c.id === row.cardId);
+    if (!card) return row;
+    const delta = cents(projectedInvoice(after, card, row.dueMonth, today) - projectedInvoice(before, card, row.dueMonth, today));
+    return delta === 0 ? row : { ...row, amount: cents(row.amount + delta) };
+  });
+  return { ...after, invoices };
 }
 
 export interface LimitImpact {
@@ -173,7 +191,7 @@ export function evaluate(profile: Profile, scenario: Scenario, today: string): S
     return [card && card.limit > 0 ? c.total / card.limit : Infinity];
   });
   const limitShare = purchaseShares.length ? Math.max(...purchaseShares) : 0;
-  const verdict = verdictFor(scenarioLow, income, limitShare, profile.parameters, today);
+  const verdict = verdictFor(scenarioLow, referenceIncome(profile, today), limitShare, profile.parameters, today);
 
   const newInstallments = after.installments.filter((i) => !profile.installments.some((b) => b.id === i.id));
   const limitImpact = profile.cards

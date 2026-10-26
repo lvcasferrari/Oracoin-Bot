@@ -80,7 +80,9 @@ function bestPurchaseDay(profile: Profile, scenario: Scenario, today: string): A
   const first = invoiceMonthForCharge(card, date, profile.parameters, today);
   const closing = closingDate(card, first);
   const bestDate = flag.value >= 0.5 ? closing : addDays(closing, 1);
-  if (bestDate <= date) return [];
+  // Only worth it when the better day is close: waiting most of a cycle is not "logo depois do fechamento".
+  const maxWait = paramRow(profile.parameters, 'best_day_max_wait_days', today);
+  if (bestDate <= date || daysBetween(date, bestDate) > maxWait.value) return [];
 
   const nowFloat = daysBetween(date, dueDate(card, first));
   const laterFloat = daysBetween(bestDate, dueDate(card, addMonths(first, 1)));
@@ -93,7 +95,7 @@ function bestPurchaseDay(profile: Profile, scenario: Scenario, today: string): A
       message: `Comprando a partir de ${ddmm(bestDate)}, a primeira parcela vence em ${ddmm(dueDate(card, addMonths(first, 1)))}: ${laterFloat} dias até pagar, em vez de ${nowFloat}.`,
       why: `O ${card.bank} fecha a fatura no dia ${card.closingDay}. Estimado: a regra do banco pode variar.`,
       impact: { criticalBalanceAfter: low, totalCost: 0 },
-      assumptions: [flag],
+      assumptions: [flag, maxWait],
     },
   ];
 }
@@ -117,11 +119,12 @@ function payInFullOrPart(base: Profile, today: string): Action[] {
   return [
     {
       id: 3,
-      title: 'Pagar o que cabe e parcelar o resto',
+      // A cost comparison, not a recommendation to take on card debt (spec 06 rule 2).
+      title: 'Se pagar só uma parte: quanto custa',
       cardId: card.id,
       message:
-        `Em ${ddmm(event.date)}, pagar a fatura do ${card.bank} inteira (${brl(invoice)}) deixaria faltar ${brl(shortfall)}. ` +
-        `Pagar ${brl(payNow)} e parcelar o resto em ${months}x custa até ${brl(plan.totalCharges)} em encargos (pior caso, com teto).`,
+        `Em ${ddmm(event.date)}, o saldo previsto não cobre a fatura do ${card.bank} (${brl(invoice)}): faltariam ${brl(shortfall)}. ` +
+        `Se pagar só ${brl(payNow)}, o restante parcelado em ${months}x pode custar até ${brl(plan.totalCharges)} em encargos (pior caso, com teto).`,
       why: `O saldo previsto não cobre a fatura no vencimento. O custo usa as premissas de juros e o teto legal de encargos.`,
       impact: { criticalBalanceAfter: low, totalCost: plan.totalCharges },
       assumptions: plan.assumptions,
@@ -202,7 +205,9 @@ export function suggestActions(profile: Profile, scenario: Scenario | null, toda
     ...invoiceCeiling(base, today),
     ...(scenario ? postponePurchase(profile, scenario, today) : []),
   ];
+  // Free actions come before any that cost money, then the best resulting balance.
+  const costs = (a: Action) => (a.impact.totalCost > 0 ? 1 : 0);
   return actions
-    .sort((a, b) => b.impact.criticalBalanceAfter - a.impact.criticalBalanceAfter || a.impact.totalCost - b.impact.totalCost || a.id - b.id)
+    .sort((a, b) => costs(a) - costs(b) || b.impact.criticalBalanceAfter - a.impact.criticalBalanceAfter || a.impact.totalCost - b.impact.totalCost || a.id - b.id)
     .slice(0, 3);
 }

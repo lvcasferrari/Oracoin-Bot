@@ -39,6 +39,7 @@ export const PARAM_INFO: Record<ParamKey, Info> = {
   rotativo_lookback_months: { label: 'Meses em que um pagamento parcial pesa na nota', unit: 'months', min: 0, max: 24, group: SCORE },
   variable_estimate_uncertainty: { label: 'Incerteza do gasto variável do cartão', unit: 'pct', min: 0, max: 100, group: PROJ },
   purchase_on_closing_day_next_invoice: { label: 'Compra no dia do fechamento entra na fatura seguinte', unit: 'bool', min: 0, max: 1, group: PROJ },
+  best_day_max_wait_days: { label: 'Espera máxima para sugerir o melhor dia de compra (dias)', unit: 'weight', min: 0, max: 31, group: PROJ },
 };
 
 const num = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
@@ -62,7 +63,9 @@ export function paramInput(key: ParamKey, value: number): string {
 /** Parses what the user typed back into the stored value; null when invalid or out of range. */
 export function parseParamInput(key: ParamKey, text: string): number | null {
   const { unit, min, max } = PARAM_INFO[key];
-  const s = text.trim().replace('%', '').replace(/\./g, '').replace(',', '.');
+  // "1,5" and "1.5" both mean one and a half; with a comma present, dots are thousands separators.
+  const raw = text.trim().replace('%', '').trim();
+  const s = raw.includes(',') ? raw.replace(/\./g, '').replace(',', '.') : raw;
   if (unit === 'bool') return /^sim$/i.test(text.trim()) ? 1 : /^n[aã]o$/i.test(text.trim()) ? 0 : null;
   if (!/^\d+(\.\d+)?$/.test(s)) return null;
   const typed = Number(s);

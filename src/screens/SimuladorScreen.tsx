@@ -16,9 +16,10 @@ import {
 import { commitScenario, listScenarios, removeScenario, saveScenario } from '../db/repos';
 import { ActionsList } from '../components/ActionsList';
 import { EmptyState } from '../components/EmptyState';
-import { Button, FormError, FormScreen, Input, trySave } from '../components/form';
+import { Button, FormError, FormScreen, InlineConfirm, Input, trySave, useAnnounce, useBusy } from '../components/form';
 import { Card } from '../components/ui';
 import { newId } from '../lib/id';
+import { logError } from '../lib/log';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
 import { nextDueMonth } from './onboarding/logic';
 import { changeFromDraft, defaultDraft, describeRows, SIM_TYPES, type SimDraft, type SimType } from './simulator/mappers';
@@ -35,11 +36,16 @@ export function SimuladorScreen() {
   const [actions, setActions] = useState<Action[]>([]);
   const [pending, setPending] = useState<{ rows: ScenarioRows; lines: string[] } | null>(null);
   const [naming, setNaming] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
+  useAnnounce(message);
 
   useEffect(() => {
-    listScenarios(db).then(setSaved).catch((e: unknown) => console.warn('[Simulador] list', e));
+    listScenarios(db)
+      .then(setSaved)
+      .catch((e: unknown) => logError('[Simulador] list', e));
   }, [db]);
 
   const parsed = useMemo(() => {
@@ -54,21 +60,20 @@ export function SimuladorScreen() {
   const changesKey = JSON.stringify(changes);
   // Show errors only for fields the user already typed in; empty required fields just wait.
   const errors = parsed && !parsed.ok ? Object.fromEntries(Object.entries(parsed.errors).filter(([f]) => (draft[f] ?? '').trim() !== '')) : {};
+  const stale = Boolean(result && parsed && !parsed.ok && !loaded);
 
-  // Re-evaluate shortly after typing stops (target: under 1 s on a phone).
+  // Re-evaluate shortly after typing stops (target: under 1 s on a phone). While an input is
+  // half-typed (invalid), the last valid result stays on screen instead of collapsing.
   useEffect(() => {
     const current: ScenarioChange[] | null = changesKey === 'null' ? null : JSON.parse(changesKey);
-    if (!current) {
-      setResult(null);
-      return;
-    }
+    if (!current) return;
     const timer = setTimeout(() => {
       try {
         const preview = { id: 'preview', name: 'preview', changes: current };
         setResult(evaluate(profile, preview, today));
         setActions(suggestActions(profile, preview, today));
       } catch (e) {
-        console.warn('[Simulador] evaluate', e);
+        logError('[Simulador] evaluate', e);
         setResult(null);
       }
     }, 150);
@@ -82,6 +87,8 @@ export function SimuladorScreen() {
     setLoaded(null);
     setPending(null);
     setNaming(null);
+    setResult(null);
+    setActions([]);
   };
 
   const pick = (t: SimType) => {
@@ -98,70 +105,76 @@ export function SimuladorScreen() {
     setPending({ rows, lines: describeRows(rows, profile.cards) });
   };
 
-  const commit = async () => {
-    if (!pending) return;
-    if (await trySave(() => commitScenario(db, pending.rows), setError)) {
-      await refresh();
-      reset();
-      setMessage('Pronto. Já está no seu controle e nas projeções.');
-    }
-  };
+  const commit = () =>
+    run(async () => {
+      if (!pending) return;
+      if (await trySave(() => commitScenario(db, pending.rows), setError)) {
+        await refresh();
+        reset();
+        setMessage('Pronto. Já está no seu controle e nas projeções.');
+      }
+    });
 
-  const saveAs = async () => {
-    if (!changes || !naming?.trim()) return;
-    const scenario: Scenario = { id: newId('scn'), name: naming.trim(), changes };
-    if (await trySave(() => saveScenario(db, scenario).then(() => undefined), setError)) {
-      setSaved(await listScenarios(db));
-      setNaming(null);
-      setMessage(`Cenário "${scenario.name}" salvo.`);
-    }
-  };
+  const saveAs = () =>
+    run(async () => {
+      if (!changes || !naming?.trim()) return;
+      const scenario: Scenario = { id: newId('scn'), name: naming.trim(), changes };
+      if (await trySave(() => saveScenario(db, scenario).then(() => undefined), setError)) {
+        setSaved(await listScenarios(db));
+        setNaming(null);
+        setMessage(`Cenário "${scenario.name}" salvo.`);
+      }
+    });
+
+  const remove = (id: string) =>
+    run(async () => {
+      if (await trySave(() => removeScenario(db, id).then(() => undefined), setError)) {
+        setSaved(await listScenarios(db));
+        setDeleting(null);
+      }
+    });
 
   const title = loaded ? loaded.name : SIM_TYPES.find((s) => s.type === type)?.title;
 
   return (
     <FormScreen>
-      {message && (
-        <Text style={styles.message} accessibilityLiveRegion="polite">
-          {message}
-        </Text>
-      )}
+      {message && <Text style={styles.message}>{message}</Text>}
 
       {saved.length > 0 && !type && !loaded && (
         <Card>
-          <Text style={styles.label}>Cenários salvos</Text>
-          {saved.map((s) => (
-            <View key={s.id} style={styles.savedRow}>
-              <Pressable
-                style={styles.flex}
-                onPress={() => {
-                  reset();
-                  setLoaded(s);
-                  setMessage(undefined);
-                }}
-                accessibilityRole="button"
-              >
-                <Text style={styles.body}>{s.name}</Text>
-              </Pressable>
-              <Pressable
-                onPress={async () => {
-                  if (await trySave(() => removeScenario(db, s.id).then(() => undefined), setError)) setSaved(await listScenarios(db));
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`Apagar cenário ${s.name}`}
-                style={styles.remove}
-              >
-                <Text style={styles.removeText}>Apagar</Text>
-              </Pressable>
-            </View>
-          ))}
+          <Text style={styles.label} accessibilityRole="header">
+            Cenários salvos
+          </Text>
+          {saved.map((s) =>
+            deleting === s.id ? (
+              <InlineConfirm key={s.id} message={`Apagar o cenário "${s.name}"?`} confirmLabel="Apagar cenário" disabled={busy} onConfirm={() => remove(s.id)} onCancel={() => setDeleting(null)} />
+            ) : (
+              <View key={s.id} style={styles.savedRow}>
+                <Pressable
+                  style={styles.flex}
+                  onPress={() => {
+                    reset();
+                    setLoaded(s);
+                    setMessage(undefined);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityHint="Mostra o resultado deste cenário"
+                >
+                  <Text style={styles.body}>{s.name}</Text>
+                </Pressable>
+                <Pressable onPress={() => setDeleting(s.id)} accessibilityRole="button" accessibilityLabel={`Apagar cenário ${s.name}`} style={styles.remove}>
+                  <Text style={styles.removeText}>Apagar</Text>
+                </Pressable>
+              </View>
+            ),
+          )}
         </Card>
       )}
 
       {!type && !loaded ? (
         <View style={styles.grid}>
           {SIM_TYPES.map((s) => (
-            <Pressable key={s.type} style={styles.tile} onPress={() => pick(s.type)} accessibilityRole="button" accessibilityHint={s.hint}>
+            <Pressable key={s.type} style={styles.tile} onPress={() => pick(s.type)} accessibilityRole="button">
               <Text style={styles.tileTitle}>{s.title}</Text>
               <Text style={styles.tileHint}>{s.hint}</Text>
             </Pressable>
@@ -170,8 +183,10 @@ export function SimuladorScreen() {
       ) : (
         <>
           <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <Pressable onPress={reset} accessibilityRole="button" style={styles.remove}>
+            <Text style={styles.title} accessibilityRole="header">
+              {title}
+            </Text>
+            <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel="Trocar tipo de cenário" style={styles.remove}>
               <Text style={styles.link}>Trocar</Text>
             </Pressable>
           </View>
@@ -183,9 +198,10 @@ export function SimuladorScreen() {
               <SimForm type={type} draft={draft} onChange={(f, v) => setDraft((d) => ({ ...d, [f]: v }))} errors={errors} cards={profile.cards} />
             ))}
 
+          {stale && <Text style={styles.hint}>Mostrando o último resultado com valores válidos.</Text>}
           {result && <ScenarioResultCard result={result} actions={<ActionsList actions={actions} />} />}
 
-          {result && !pending && (
+          {result && !pending && !stale && (
             <>
               <Button title="Seguir com isso" onPress={prepareCommit} />
               {!loaded &&
@@ -194,7 +210,7 @@ export function SimuladorScreen() {
                 ) : (
                   <>
                     <Input label="Nome do cenário" value={naming} onChangeText={setNaming} autoFocus />
-                    <Button title="Salvar" kind="secondary" onPress={saveAs} />
+                    <Button title="Salvar" kind="secondary" onPress={saveAs} disabled={busy} />
                   </>
                 ))}
             </>
@@ -202,14 +218,16 @@ export function SimuladorScreen() {
 
           {pending && (
             <Card>
-              <Text style={styles.label}>Isto vai entrar no seu controle:</Text>
+              <Text style={styles.label} accessibilityRole="header">
+                Isto vai entrar no seu controle:
+              </Text>
               {pending.lines.length === 0 && <Text style={styles.body}>Nada muda nos seus lançamentos.</Text>}
               {pending.lines.map((line) => (
                 <Text key={line} style={styles.body}>
                   • {line}
                 </Text>
               ))}
-              <Button title="Confirmar" onPress={commit} disabled={pending.lines.length === 0} />
+              <Button title="Confirmar" onPress={commit} disabled={busy || pending.lines.length === 0} />
               <Button title="Voltar" kind="secondary" onPress={() => setPending(null)} />
             </Card>
           )}
@@ -221,18 +239,19 @@ export function SimuladorScreen() {
 }
 
 const styles = StyleSheet.create({
-  message: { fontSize: 15, fontWeight: '500', color: '#2f6f4f' },
-  label: { fontSize: 13, opacity: 0.6 },
+  message: { fontSize: 15, fontWeight: '500', color: '#265a40' },
+  label: { fontSize: 13, opacity: 0.75 },
   body: { fontSize: 15 },
+  hint: { fontSize: 13, opacity: 0.75 },
   flex: { flex: 1, minHeight: 44, justifyContent: 'center' },
   savedRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   remove: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
-  removeText: { fontSize: 14, opacity: 0.7 },
+  removeText: { fontSize: 14, opacity: 0.8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: { width: '47%', minHeight: 96, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#8885', gap: 4 },
+  tile: { width: '47%', minHeight: 96, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: '#767676', gap: 4 },
   tileTitle: { fontSize: 15, fontWeight: '600' },
-  tileHint: { fontSize: 12, opacity: 0.65 },
+  tileHint: { fontSize: 12, opacity: 0.75 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 20, fontWeight: '600', flex: 1 },
-  link: { fontSize: 15, color: '#2f6f4f', fontWeight: '500' },
+  link: { fontSize: 15, color: '#265a40', fontWeight: '500' },
 });

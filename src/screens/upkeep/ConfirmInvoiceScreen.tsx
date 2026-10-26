@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { dueDate, projectedInvoice } from '../../engine';
 import { saveInvoice } from '../../db/repos';
-import { Button, FormError, FormScreen, MoneyInput, trySave } from '../../components/form';
+import { Button, FormError, FormScreen, MoneyInput, trySave, useBusy } from '../../components/form';
 import { Money } from '../../components/ui';
 import { formatDateBR, shortMonth } from '../../lib/dateInput';
 import { newId } from '../../lib/id';
@@ -21,17 +21,20 @@ export function ConfirmInvoiceScreen({ route, navigation }: NativeStackScreenPro
   const [amount, setAmount] = useState(toInput(estimate));
   const [error, setError] = useState<string>();
   const [formError, setFormError] = useState<string>();
+  const [busy, run] = useBusy();
 
   if (!card) return <FormScreen><Text>Este cartão não existe mais.</Text></FormScreen>;
 
-  const save = async () => {
-    const result = confirmFromDraft(amount, { id: row?.id ?? newId('inv'), cardId, dueMonth, estimatedAtConfirm: estimate });
-    if (!result.ok) return setError(result.errors.amount);
-    if (await trySave(() => saveInvoice(db, result.value).then(() => undefined), setFormError)) {
-      await refresh();
-      navigation.goBack();
-    }
-  };
+  const save = () =>
+    run(async () => {
+      const result = confirmFromDraft(amount, { id: row?.id ?? newId('inv'), cardId, dueMonth, estimatedAtConfirm: estimate });
+      if (!result.ok) return setError(result.errors.amount);
+      const ok = await trySave(async () => {
+        await saveInvoice(db, result.value);
+        await refresh();
+      }, setFormError);
+      if (ok) navigation.goBack();
+    });
 
   return (
     <FormScreen>
@@ -43,7 +46,7 @@ export function ConfirmInvoiceScreen({ route, navigation }: NativeStackScreenPro
       </Text>
       <MoneyInput label="Valor que veio na fatura" value={amount} onChangeText={(t) => { setAmount(t); setError(undefined); }} error={error} autoFocus />
       <FormError message={formError} />
-      <Button title="Confirmar valor" onPress={save} />
+      <Button title="Confirmar valor" onPress={save} disabled={busy} />
     </FormScreen>
   );
 }

@@ -25,7 +25,7 @@ export function Pill({ tone, children }: { tone: 'ok' | 'warn' | 'risk'; childre
 
 const styles = StyleSheet.create({
   card: { padding: 16, borderRadius: 16, backgroundColor: 'rgba(127,127,127,0.12)', gap: 6 },
-  pill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, marginTop: 6 },
+  pill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14, marginTop: 6 },
   ok: { backgroundColor: '#d7f3df' },
   warn: { backgroundColor: '#fff0c2' },
   risk: { backgroundColor: '#ffd6d6' },

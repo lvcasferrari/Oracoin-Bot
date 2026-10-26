@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { monthOf, param, type Card, type Category } from '../../engine';
 import { replaceCardInstallments, saveAccount, saveCard, saveEntry, saveInvoice, setBalanceDate } from '../../db/repos';
-import { BankPicker, Button, Chips, DayInput, FormError, Input, MoneyInput, trySave } from '../../components/form';
+import { BankPicker, Button, Chips, DayInput, FormError, Input, MoneyInput, trySave, useBusy } from '../../components/form';
 import { Money } from '../../components/ui';
 import { CATEGORY_LABELS } from '../../lib/banks';
 import { formatMonthBR } from '../../lib/dateInput';
@@ -25,8 +25,9 @@ export function IncomeStep({ onDone }: { onDone: () => void }) {
   const [balance, setBalance] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
 
-  const next = async () => {
+  const next = () => run(async () => {
     const entry = entryFromDraft({
       id: ids.current.entry, kind: 'in', name: 'Salário', amount: income, recurrence: 'monthly', day, startMonth: formatMonthBR(monthOf(today)), endMonth: '', date: '',
     });
@@ -47,16 +48,17 @@ export function IncomeStep({ onDone }: { onDone: () => void }) {
       await refresh();
       onDone();
     }
-  };
+  });
 
   return (
     <>
+      <Text style={styles.privacy}>Seus dados ficam só neste aparelho. Nada é enviado para servidores, e você pode apagar tudo em Plano.</Text>
       <MoneyInput label="Quanto cai na conta por mês (líquido)" value={income} onChangeText={setIncome} error={errors.amount} autoFocus />
       <DayInput label="Dia em que cai" value={day} onChangeText={setDay} error={errors.day} />
       <BankPicker value={bank} onChange={setBank} />
       <MoneyInput label="Quanto tem na conta hoje? (opcional)" value={balance} onChangeText={setBalance} error={errors.balance} hint="Sem isso, o app começa do zero." />
       <FormError message={error} />
-      <Button title="Continuar" onPress={next} />
+      <Button title="Continuar" onPress={next} disabled={busy} />
     </>
   );
 }
@@ -71,8 +73,10 @@ export function CardsStep({ added, onAdded, onDone }: {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
   const set = (key: keyof typeof empty) => (value: string) => setDraft((d) => ({ ...d, [key]: value }));
+  const [busy, run] = useBusy();
 
-  const add = async () => {
+  // One add at a time: a double tap must not create the same card twice.
+  const add = () => run(async () => {
     const id = newId('card');
     const nextInvoice = draft.nextInvoice.trim() === '' ? 0 : parseBRL(draft.nextInvoice);
     const card = cardFromDraft({ id, bank: draft.bank, name: '', closingDay: draft.closingDay, dueDay: draft.dueDay, limit: draft.limit, variableEstimate: '', availableInformed: '' });
@@ -93,7 +97,7 @@ export function CardsStep({ added, onAdded, onDone }: {
       onAdded({ id, nextInvoice });
       setDraft(empty);
     }
-  };
+  });
 
   return (
     <>
@@ -121,8 +125,8 @@ export function CardsStep({ added, onAdded, onDone }: {
       </View>
       <MoneyInput label="Quanto vem na próxima fatura? (estimativa serve)" value={draft.nextInvoice} onChangeText={set('nextInvoice')} error={errors.nextInvoice} />
       <FormError message={error} />
-      <Button title={added.length > 0 ? 'Adicionar outro cartão' : 'Adicionar cartão'} kind={added.length > 0 ? 'secondary' : 'primary'} onPress={add} />
-      <Button title={added.length > 0 ? 'Continuar' : SKIP} kind={added.length > 0 ? 'primary' : 'secondary'} onPress={onDone} />
+      <Button title={added.length > 0 ? 'Adicionar outro cartão' : 'Adicionar cartão'} kind={added.length > 0 ? 'secondary' : 'primary'} onPress={add} disabled={busy} />
+      <Button title={added.length > 0 ? 'Continuar' : SKIP} kind={added.length > 0 ? 'primary' : 'secondary'} onPress={onDone} disabled={busy} />
     </>
   );
 }
@@ -137,15 +141,17 @@ export function InstallmentsStep({ cards, onDone }: { cards: { id: string; nextI
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
 
-  const save = async (withGrid: boolean) => {
+  const save = (withGrid: boolean) => run(async () => {
     const rows: Record<string, ReturnType<typeof installmentsFromGrid>> = {};
     for (const c of cards) rows[c.id] = installmentsFromGrid(c.id, withGrid ? values[c.id] ?? {} : {}, () => newId('inst'));
     const failed = Object.entries(rows).find(([, r]) => !r.ok);
     if (failed) {
       setSelected(failed[0]);
       const r = failed[1];
-      return setErrors(r.ok ? {} : r.errors);
+      setErrors(r.ok ? {} : r.errors);
+      return;
     }
     const ok = await trySave(
       () =>
@@ -167,7 +173,7 @@ export function InstallmentsStep({ cards, onDone }: { cards: { id: string; nextI
       await refresh();
       onDone();
     }
-  };
+  });
 
   const options = cards.map((c) => {
     const card = profile.cards.find((x) => x.id === c.id);
@@ -187,8 +193,8 @@ export function InstallmentsStep({ cards, onDone }: { cards: { id: string; nextI
         />
       )}
       <FormError message={error} />
-      <Button title="Continuar" onPress={() => save(true)} />
-      <Button title={SKIP} kind="secondary" onPress={() => save(false)} />
+      <Button title="Continuar" onPress={() => save(true)} disabled={busy} />
+      <Button title={SKIP} kind="secondary" onPress={() => save(false)} disabled={busy} />
     </>
   );
 }
@@ -212,19 +218,23 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
   const added = profile.entries.filter((e) => e.kind === 'out');
+  const [busy, run] = useBusy();
 
-  const add = async () => {
+  const add = () => run(async () => {
     const entry = entryFromDraft({
       id: newId('entry'), kind: 'out', name: draft.name, amount: draft.amount, recurrence: 'monthly', day: draft.day,
       startMonth: formatMonthBR(monthOf(today)), endMonth: '', date: '', category: draft.category,
     });
-    if (!entry.ok) return setErrors(entry.errors);
+    if (!entry.ok) {
+      setErrors(entry.errors);
+      return;
+    }
     setErrors({});
     if (await trySave(() => saveEntry(db, entry.value).then(() => undefined), setError)) {
       await refresh();
       setDraft(empty);
     }
-  };
+  });
 
   return (
     <>
@@ -251,14 +261,15 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
       </View>
       <Chips label="Categoria (opcional)" options={CATEGORIES} value={draft.category} onChange={(category) => setDraft((d) => ({ ...d, category }))} />
       <FormError message={error} />
-      <Button title="Adicionar" kind="secondary" onPress={add} />
-      <Button title={added.length > 0 ? 'Ver meu Raio-X' : SKIP} onPress={onDone} />
+      <Button title="Adicionar" kind="secondary" onPress={add} disabled={busy} />
+      <Button title={added.length > 0 ? 'Ver meu Raio-X' : SKIP} onPress={onDone} disabled={busy} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
   body: { fontSize: 15 },
+  privacy: { fontSize: 13, opacity: 0.8 },
   added: { gap: 4 },
   addedRow: { flexDirection: 'row', justifyContent: 'space-between' },
   row: { flexDirection: 'row', gap: 12 },
