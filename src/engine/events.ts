@@ -57,7 +57,10 @@ export function invoiceFor(profile: Profile, card: Card, month: string, today: s
     const total = projectedInvoice(profile, card, month, today);
     return { total, cashOut: total, estimated: true };
   }
-  const cashOut = row.status === 'parcial' ? row.paidAmount ?? 0 : row.amount;
+  // A payment made on or before the balance date is already inside the informed balance.
+  const alreadyInBalance = row.paidOn !== undefined && row.paidOn <= profile.balanceDate;
+  const paid = row.status === 'parcial' ? row.paidAmount ?? 0 : row.amount;
+  const cashOut = alreadyInBalance && (row.status === 'paga' || row.status === 'parcial') ? 0 : paid;
   return { total: row.amount, cashOut, estimated: row.origin !== 'confirmada', row };
 }
 

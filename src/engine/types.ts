@@ -23,6 +23,7 @@ export const PARAM_KEYS = [
   'rotativo_lookback_months',
   'variable_estimate_uncertainty',
   'purchase_on_closing_day_next_invoice',
+  'best_day_max_wait_days',
 ] as const;
 
 export type ParamKey = (typeof PARAM_KEYS)[number];
@@ -94,6 +95,8 @@ export interface Invoice {
   origin: 'estimada' | 'confirmada';
   status: 'fechada' | 'paga' | 'parcial';
   paidAmount?: number;
+  /** Day the user paid. Once the balance date reaches it, the payment is already in the balance. */
+  paidOn?: string;
   partialPlanMonths?: number;
   /** The projection shown when the user confirmed the real amount (forecast-quality metric). */
   estimatedAtConfirm?: number;

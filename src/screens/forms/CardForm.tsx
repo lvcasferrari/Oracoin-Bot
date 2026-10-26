@@ -84,7 +84,8 @@ export function CardFormScreen({ route, navigation }: NativeStackScreenProps<Ban
       />
       {initial && (
         <>
-          <Button title="Parcelas futuras" kind="secondary" onPress={() => navigation.replace('InstallmentsForm', { cardId: initial.id })} />
+          {/* navigate, not replace: unsaved card edits stay on the screen underneath. */}
+          <Button title="Parcelas futuras" kind="secondary" onPress={() => navigation.navigate('InstallmentsForm', { cardId: initial.id })} />
           {confirming ? (
             <InlineConfirm
               message={message}

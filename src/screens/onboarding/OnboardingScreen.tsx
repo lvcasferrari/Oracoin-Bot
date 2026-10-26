@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { setOnboarded } from '../../db/repos';
-import { FormScreen } from '../../components/form';
+import { Button, FormError, FormScreen, trySave, useAnnounce, useBusy } from '../../components/form';
 import type { RootStackParamList } from '../../navigation/types';
 import { useReadyData } from '../../state/AppData';
 import { RaioX } from './RaioX';
@@ -16,28 +16,36 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
   const startedAt = useRef(Date.now());
   const [step, setStep] = useState(0);
   const [seconds, setSeconds] = useState(0);
+  const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
   // Cards created here, with the next-invoice amount typed for each (used for the variable estimate).
   const [cards, setCards] = useState<{ id: string; nextInvoice: number }[]>([]);
+  useAnnounce(`Passo ${step + 1} de ${TITLES.length}: ${TITLES[step]}`);
+
+  const toTabs = () => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
 
   const toRaioX = () => {
     setSeconds((Date.now() - startedAt.current) / 1000);
     setStep(4);
   };
 
-  const finish = async () => {
-    await setOnboarded(db, today, seconds);
-    await refresh();
-    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
-  };
+  const finish = () =>
+    run(async () => {
+      if (!(await trySave(() => setOnboarded(db, today, seconds).then(() => undefined), setError))) return;
+      await refresh();
+      toTabs();
+    });
 
   return (
     <FormScreen>
-      <View style={styles.progress} accessibilityLabel={`Passo ${step + 1} de ${TITLES.length}`}>
+      <View style={styles.progress} accessible accessibilityLabel={`Passo ${step + 1} de ${TITLES.length}`}>
         {TITLES.map((t, i) => (
           <View key={t} style={[styles.segment, i <= step && styles.segmentDone]} />
         ))}
       </View>
-      <Text style={styles.title}>{TITLES[step]}</Text>
+      <Text style={styles.title} accessibilityRole="header">
+        {TITLES[step]}
+      </Text>
 
       {step === 0 && <IncomeStep onDone={() => setStep(1)} />}
       {step === 1 && (
@@ -50,6 +58,10 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
       {step === 2 && <InstallmentsStep cards={cards} onDone={() => setStep(3)} />}
       {step === 3 && <FixedStep onDone={toRaioX} />}
       {step === 4 && <RaioX onFinish={finish} />}
+
+      <FormError message={error} />
+      {/* A first launch must never be a dead end: the app can be explored and filled in later. */}
+      {step < 4 && <Button title="Pular, explorar sem preencher" kind="secondary" disabled={busy} onPress={toTabs} />}
     </FormScreen>
   );
 }

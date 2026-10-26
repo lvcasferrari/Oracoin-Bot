@@ -4,10 +4,13 @@
     "slug": "life-strategic-plan",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.lvcasferrari.lifestrategicplan"
+      "bundleIdentifier": "com.lvcasferrari.lifestrategicplan",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.lvcasferrari.lifestrategicplan"

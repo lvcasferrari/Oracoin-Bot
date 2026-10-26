@@ -1,26 +1,17 @@
 // The only file that imports values from expo-sqlite; tests never import it.
-import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
-import type { SqlDriver } from './driver';
-
-export function expoDriver(db: SQLiteDatabase): SqlDriver {
-  return {
-    exec: (sql) => db.execAsync(sql),
-    run: async (sql, params = []) => ({ changes: (await db.runAsync(sql, params)).changes }),
-    all: (sql, params = []) => db.getAllAsync(sql, params),
-    first: (sql, params = []) => db.getFirstAsync(sql, params),
-    transaction: async (fn) => {
-      let result: Awaited<ReturnType<typeof fn>> | undefined;
-      // Every query inside runs on the exclusive `txn` connection.
-      await db.withExclusiveTransactionAsync(async (txn) => {
-        result = await fn(expoDriver(txn));
-      });
-      return result as Awaited<ReturnType<typeof fn>>;
-    },
-  };
-}
+import { openDatabaseAsync } from 'expo-sqlite';
+import type { SqlDriver, SqlParam } from './driver';
+import { serialDriver } from './serialDriver';
 
 export async function openExpoDb(name: string): Promise<SqlDriver> {
   const db = await openDatabaseAsync(name);
   await db.execAsync('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
-  return expoDriver(db);
+  // Transactions stay on this connection (see serialDriver): withExclusiveTransactionAsync would open
+  // a second connection without foreign_keys, and PRAGMA foreign_keys is a no-op inside a transaction.
+  return serialDriver({
+    execAsync: (sql) => db.execAsync(sql),
+    runAsync: (sql, params: SqlParam[]) => db.runAsync(sql, params),
+    getAllAsync: <T,>(sql: string, params: SqlParam[]) => db.getAllAsync<T>(sql, params),
+    getFirstAsync: <T,>(sql: string, params: SqlParam[]) => db.getFirstAsync<T>(sql, params),
+  });
 }

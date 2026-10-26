@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Account } from '../../engine';
 import { removeAccount, saveAccount, setBalanceDate } from '../../db/repos';
-import { BankPicker, Button, Chips, FormError, FormScreen, InlineConfirm, MoneyInput, trySave } from '../../components/form';
+import { BankPicker, Button, Chips, FormError, FormScreen, InlineConfirm, MoneyInput, trySave, useBusy } from '../../components/form';
 import { useForm } from '../../components/useForm';
 import { formatDateBR } from '../../lib/dateInput';
 import { newId } from '../../lib/id';
@@ -85,6 +85,7 @@ export function BalancesScreen({ navigation }: NativeStackScreenProps<BancosStac
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
 
   if (profile.accounts.length === 0) {
     return (
@@ -95,7 +96,7 @@ export function BalancesScreen({ navigation }: NativeStackScreenProps<BancosStac
     );
   }
 
-  const save = async () => {
+  const save = () => run(async () => {
     const nextErrors: Record<string, string> = {};
     const parsed = profile.accounts.map((a) => {
       const value = values[a.id]?.trim() === '' ? 0 : parseBRL(values[a.id] ?? '');
@@ -116,7 +117,7 @@ export function BalancesScreen({ navigation }: NativeStackScreenProps<BancosStac
       await refresh();
       navigation.goBack();
     }
-  };
+  });
 
   return (
     <FormScreen>
@@ -131,7 +132,7 @@ export function BalancesScreen({ navigation }: NativeStackScreenProps<BancosStac
         />
       ))}
       <FormError message={error} />
-      <Button title="Salvar saldos de hoje" onPress={save} />
+      <Button title="Salvar saldos de hoje" onPress={save} disabled={busy} />
     </FormScreen>
   );
 }

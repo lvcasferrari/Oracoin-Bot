@@ -39,7 +39,8 @@ export function PayInvoiceScreen({ route, navigation }: NativeStackScreenProps<{
 
   const goToBalances = () => {
     navigation.goBack();
-    navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Bancos', { screen: 'Balances' });
+    // initial: false keeps BancosHome under Balances even if the Bancos tab was never opened.
+    navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Bancos', { screen: 'Balances', initial: false });
   };
 
   if (paidInFull) {
@@ -112,7 +113,8 @@ export function PayInvoiceScreen({ route, navigation }: NativeStackScreenProps<{
         disabled={f.busy}
         onPress={() =>
           f.submit(async (invoice) => {
-            await saveInvoice(db, invoice);
+            // The day of payment lets the forecast stop counting it once the balance is updated.
+            await saveInvoice(db, { ...invoice, paidOn: today });
             await refresh();
             if (invoice.status === 'paga') setPaidInFull(true);
             else navigation.goBack();

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PARAMETERS, PARAM_KEYS, applyChanges, cents, scenarioRows, worstCase, type Profile } from '../engine';
+import { DEFAULT_PARAMETERS, PARAM_KEYS, applyChanges, cents, paramRow, scenarioRows, worstCase, type Profile } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { loadProfile, saveProfile } from './loadProfile';
 import { toCents } from './mappers';
 import { migrate, MIGRATIONS, type Migration } from './migrations';
 import { nodeDriver } from './nodeDriver';
-import { commitScenario, listInvoices, listParameters, replaceCardInstallments, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
+import { commitScenario, listInvoices, listParameters, replaceCardInstallments, restoreParameterDefault, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
 import { resetAll } from './reset';
 
 const fresh = async () => {
@@ -20,7 +20,7 @@ const count = async (db: Awaited<ReturnType<typeof fresh>>, table: string) =>
 
 const fullProfile: Profile = {
   ...sampleProfile,
-  invoices: [{ id: 'inv-nu-11', cardId: 'nu', dueMonth: '2026-11', amount: 2000, origin: 'confirmada', status: 'parcial', paidAmount: 500, partialPlanMonths: 6, estimatedAtConfirm: 1950 }],
+  invoices: [{ id: 'inv-nu-11', cardId: 'nu', dueMonth: '2026-11', amount: 2000, origin: 'confirmada', status: 'parcial', paidAmount: 500, paidOn: '2026-11-10', partialPlanMonths: 6, estimatedAtConfirm: 1950 }],
   debts: [{ id: 'carro', name: 'Carro', kind: 'financiamento', principal: 12000, monthlyRate: 0.0149, months: 24, system: 'price', startMonth: '2026-12', dueDay: 15 }],
   goals: [{ id: 'reserva', name: 'Reserva', target: 18000, saved: 2500, deadline: '2027-12-31', priority: 1 }],
 };
@@ -77,6 +77,16 @@ describe('parameter seed', () => {
     const params = (await loadProfile(db)).parameters;
     expect(worstCase(1000, 12, params, '2026-12-01').totalPaid).toBeGreaterThan(before);
     expect(worstCase(1000, 12, params, '2026-11-30').totalPaid).toBe(before);
+  });
+  it('keeps the seed when the user edits on its own date, so restore and reset never break the app', async () => {
+    const db = await fresh();
+    await saveParameter(db, { key: 'reserve_target_months', value: 3, effectiveFrom: '2026-10-26', source: USER_SOURCE });
+    expect(paramRow((await loadProfile(db)).parameters, 'reserve_target_months', '2026-10-26').value).toBe(3);
+    await restoreParameterDefault(db, 'reserve_target_months');
+    expect(paramRow((await loadProfile(db)).parameters, 'reserve_target_months', '2026-10-26').value).toBe(6);
+    await saveParameter(db, { key: 'projection_months', value: 24, effectiveFrom: '2026-10-26', source: USER_SOURCE });
+    await resetAll(db, '2026-10-26');
+    expect(paramRow((await loadProfile(db)).parameters, 'projection_months', '2026-10-26').value).toBe(18);
   });
   it('updates a same-day edit instead of failing', async () => {
     const db = await fresh();

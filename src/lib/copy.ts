@@ -4,7 +4,11 @@
 export const DISCLAIMER = 'Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito.';
 
 /** Blame and credit/investment words the app must never say (spec 01 principle 5, spec 06 rules 1–2). */
-export const BANNED = ['gastou demais', 'irrespons', 'culpa', 'contrate', 'pré-aprovado', 'pre-aprovado', 'invista', 'aplique', 'cdb', 'empréstimo na hora'];
+export const BANNED = [
+  'gastou demais', 'irrespons', 'culpa', 'contrate', 'pré-aprovado', 'pre-aprovado', 'invista', 'aplique', 'cdb', 'empréstimo na hora',
+  // Imperatives that would push the user into debt.
+  'parcele', 'financie', 'pegue um empréstimo', 'e parcelar o resto',
+];
 
 export const EMPTY_TITLE = 'Vamos montar seu mês.';
 export const EMPTY_BODY = 'Leva menos de 3 minutos.';

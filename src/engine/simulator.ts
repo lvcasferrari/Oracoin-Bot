@@ -1,7 +1,7 @@
-import { cents, monthOf, addMonths } from './dates';
+import { cents, addMonths } from './dates';
 import { invoiceMonthForCharge } from './cycle';
 import { buildEvents, criticalDay, profileBalance } from './events';
-import { netIncome } from './metrics';
+import { referenceIncome } from './metrics';
 import { param } from './params';
 import type { Installment, ParamKey, Parameter, Profile } from './types';
 
@@ -55,7 +55,7 @@ export function simulatePurchase(profile: Profile, scenario: PurchaseScenario, t
   const baselineLow = criticalDay(start, buildEvents(profile, today))?.balance ?? start;
   const scenarioLow = criticalDay(start, buildEvents(withPurchase, today))?.balance ?? start;
   const limitShare = card.limit > 0 ? scenario.total / card.limit : Infinity;
-  const income = netIncome(profile, monthOf(today), today);
+  const income = referenceIncome(profile, today);
 
   return {
     monthlyInstallment: parts[parts.length - 1],

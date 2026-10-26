@@ -68,7 +68,22 @@ INSERT INTO parameters (key, effective_from, value, source) VALUES
   ('purchase_on_closing_day_next_invoice', '2026-10-26', 1, 'sem fonte citável; editável (0 ou 1)');
 `;
 
-export const MIGRATIONS: Migration[] = [{ version: 1, sql: V1 }];
+// v2 (review fixes): a user edit on a seed's date must not overwrite the seed, so the source joins
+// the parameter key; invoices remember the day they were paid; new parameter for action #2.
+const V2 = `
+CREATE TABLE parameters_v2 (key TEXT NOT NULL, effective_from TEXT NOT NULL, value REAL NOT NULL,
+  source TEXT NOT NULL, note TEXT, PRIMARY KEY (key, effective_from, source));
+INSERT INTO parameters_v2 (key, effective_from, value, source, note) SELECT key, effective_from, value, source, note FROM parameters;
+DROP TABLE parameters;
+ALTER TABLE parameters_v2 RENAME TO parameters;
+ALTER TABLE invoices ADD COLUMN paid_on TEXT;
+INSERT INTO parameters (key, effective_from, value, source) VALUES ('best_day_max_wait_days', '2026-10-27', 7, 'referência do app');
+`;
+
+export const MIGRATIONS: Migration[] = [
+  { version: 1, sql: V1 },
+  { version: 2, sql: V2 },
+];
 
 /** Applies the missing migrations, each with its `user_version` bump in one transaction. */
 export async function migrate(db: SqlDriver, migrations: Migration[] = MIGRATIONS): Promise<number> {

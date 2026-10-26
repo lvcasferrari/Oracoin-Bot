@@ -16,7 +16,7 @@ export function FluxoStack() {
         options={({ navigation }) => ({
           title: 'Fluxo de caixa',
           headerRight: () => (
-            <Pressable onPress={() => navigation.navigate('Lancamentos')} accessibilityRole="button" hitSlop={12}>
+            <Pressable onPress={() => navigation.navigate('Lancamentos')} accessibilityRole="button" hitSlop={14}>
               <Text style={{ fontSize: 16, color: '#2f6f4f' }}>Lançamentos</Text>
             </Pressable>
           ),

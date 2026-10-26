@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { addMonths, monthOf, param, type Installment } from '../../engine';
 import { replaceCardInstallments } from '../../db/repos';
-import { Button, FormError, FormScreen, Input, MoneyInput, trySave } from '../../components/form';
+import { Button, FormError, FormScreen, Input, MoneyInput, trySave, useBusy } from '../../components/form';
 import { shortMonth } from '../../lib/dateInput';
 import { fillSameAmount } from '../../lib/fill';
 import { newId } from '../../lib/id';
@@ -57,6 +57,7 @@ export function InstallmentsFormScreen({ route, navigation }: NativeStackScreenP
   const [values, setValues] = useState(() => gridValues(profile.installments, route.params.cardId, months));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
 
   if (!card) {
     return (
@@ -66,16 +67,17 @@ export function InstallmentsFormScreen({ route, navigation }: NativeStackScreenP
     );
   }
 
-  const save = async () => {
-    const result = installmentsFromGrid(card.id, values, () => newId('inst'));
-    if (!result.ok) return setErrors(result.errors);
-    setErrors({});
-    const ok = await trySave(() => replaceCardInstallments(db, card.id, months[0], result.value), setError);
-    if (ok) {
-      await refresh();
-      navigation.goBack();
-    }
-  };
+  const save = () =>
+    run(async () => {
+      const result = installmentsFromGrid(card.id, values, () => newId('inst'));
+      if (!result.ok) return setErrors(result.errors);
+      setErrors({});
+      const ok = await trySave(async () => {
+        await replaceCardInstallments(db, card.id, months[0], result.value);
+        await refresh();
+      }, setError);
+      if (ok) navigation.goBack();
+    });
 
   return (
     <FormScreen>
@@ -84,7 +86,7 @@ export function InstallmentsFormScreen({ route, navigation }: NativeStackScreenP
       </Text>
       <InstallmentsGrid months={months} values={values} onChange={setValues} errors={errors} />
       <FormError message={error} />
-      <Button title="Salvar parcelas" onPress={save} />
+      <Button title="Salvar parcelas" onPress={save} disabled={busy} />
     </FormScreen>
   );
 }

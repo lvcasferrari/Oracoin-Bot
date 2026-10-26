@@ -31,10 +31,12 @@ export function EntriesScreen({ navigation }: NativeStackScreenProps<FluxoStackP
     <ScrollView contentContainerStyle={styles.page}>
       {groups.map((g) => (
         <View key={g.kind} style={styles.group}>
-          <Text style={styles.title}>{g.title}</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            {g.title}
+          </Text>
           {g.items.length === 0 && <Text style={styles.empty}>Nada por aqui ainda.</Text>}
           {g.items.map((e) => (
-            <Pressable key={e.id} style={styles.row} onPress={() => navigation.navigate('EntryForm', { id: e.id })} accessibilityRole="button" accessibilityLabel={`Editar ${e.name}`}>
+            <Pressable key={e.id} style={styles.row} onPress={() => navigation.navigate('EntryForm', { id: e.id })} accessibilityRole="button" accessibilityHint="Editar lançamento">
               <View style={styles.flex}>
                 <Text style={styles.name}>{e.name}</Text>
                 <Text style={styles.meta}>{describe(e, profile)}</Text>

@@ -30,19 +30,23 @@ export interface GoalProgress {
 export function goalTimeline(goals: Goal[], contribs: Contribution[]): GoalProgress[] {
   const ordered = [...goals].sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
   const remaining = ordered.map((g) => cents(Math.max(0, g.target - g.saved)));
-  const reached: (string | null)[] = ordered.map(() => null);
+  // Goals already funded are reached from the first month, whatever their priority.
+  const reached: (string | null)[] = ordered.map((_, k) => (remaining[k] <= 0 && contribs.length > 0 ? contribs[0].month : null));
   let i = 0;
-  const settle = (month: string) => {
-    while (i < ordered.length && remaining[i] <= 0) reached[i++] = month;
+  const skipReached = () => {
+    while (i < ordered.length && reached[i] !== null) i++;
   };
-  if (contribs.length > 0) settle(contribs[0].month);
+  skipReached();
   for (const { month, amount } of contribs) {
     let available = amount;
     while (available > 0 && i < ordered.length) {
       const take = Math.min(available, remaining[i]);
       remaining[i] = cents(remaining[i] - take);
       available = cents(available - take);
-      settle(month);
+      if (remaining[i] <= 0) {
+        reached[i] = month;
+        skipReached();
+      }
     }
   }
   return ordered.map((goal, k) => ({ goal, reachedMonth: reached[k] }));

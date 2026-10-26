@@ -8,11 +8,11 @@ export const listInvoices = async (db: SqlDriver): Promise<Invoice[]> =>
 /** One invoice per card and month: saving again for the same month updates it. */
 export const saveInvoice = (db: SqlDriver, i: Invoice) =>
   db.run(
-    `INSERT INTO invoices (id, card_id, due_month, amount_cents, origin, status, paid_cents, partial_plan_months, estimated_cents_at_confirm)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO invoices (id, card_id, due_month, amount_cents, origin, status, paid_cents, partial_plan_months, estimated_cents_at_confirm, paid_on)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (card_id, due_month) DO UPDATE SET amount_cents = excluded.amount_cents, origin = excluded.origin,
        status = excluded.status, paid_cents = excluded.paid_cents, partial_plan_months = excluded.partial_plan_months,
-       estimated_cents_at_confirm = excluded.estimated_cents_at_confirm`,
+       estimated_cents_at_confirm = excluded.estimated_cents_at_confirm, paid_on = excluded.paid_on`,
     invoiceToParams(i),
   );
 

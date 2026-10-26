@@ -19,6 +19,21 @@ export function netIncome(profile: Profile, month: string, today: string): numbe
   return cents(monthEvents(profile, month, today).reduce((s, e) => (e.amount > 0 ? s + e.amount : s), 0));
 }
 
+/**
+ * Income the verdict thresholds compare against: the largest net income of this and the next two
+ * months (a salary may start next month), else this month's essential outflows, else 0.
+ */
+export function referenceIncome(profile: Profile, today: string): number {
+  const month = today.slice(0, 7);
+  const months = [0, 1, 2].map((k) => {
+    const [y, m] = month.split('-').map(Number);
+    const total = y * 12 + (m - 1) + k;
+    return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, '0')}`;
+  });
+  const income = Math.max(...months.map((m) => netIncome(profile, m, today)));
+  return income > 0 ? income : essentialOutflows(profile, month, today);
+}
+
 /** Day of the largest monthly income (earliest day on a tie), or null without income. */
 export function payday(profile: Profile): number | null {
   const incomes = profile.entries.filter((e) => e.kind === 'in' && e.recurrence === 'monthly');

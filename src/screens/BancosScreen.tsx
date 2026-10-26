@@ -26,13 +26,13 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
         <Button title="Atualizar saldos" onPress={() => navigation.navigate('Balances')} />
         <View style={styles.row}>
           <View style={styles.flex}>
-            <Button title="+ Conta" kind="secondary" onPress={() => navigation.navigate('AccountForm')} />
+            <Button title="+ Conta" accessibilityLabel="Adicionar conta" kind="secondary" onPress={() => navigation.navigate('AccountForm')} />
           </View>
           <View style={styles.flex}>
-            <Button title="+ Cartão" kind="secondary" onPress={() => navigation.navigate('CardForm')} />
+            <Button title="+ Cartão" accessibilityLabel="Adicionar cartão" kind="secondary" onPress={() => navigation.navigate('CardForm')} />
           </View>
           <View style={styles.flex}>
-            <Button title="+ Dívida" kind="secondary" onPress={() => navigation.navigate('DebtForm')} />
+            <Button title="+ Dívida" accessibilityLabel="Adicionar dívida" kind="secondary" onPress={() => navigation.navigate('DebtForm')} />
           </View>
         </View>
         {profile.accounts.length > 0 && <Text style={styles.hint}>Saldos informados em {formatDateBR(meta.balanceDate)}.</Text>}
@@ -44,14 +44,16 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
         const dueThisMonth = cents(cards.reduce((s, c) => s + invoiceFor(profile, c, month, today).cashOut, 0));
         return (
           <Card key={bank}>
-            <Text style={styles.bank}>{bank}</Text>
+            <Text style={styles.bank} accessibilityRole="header">
+              {bank}
+            </Text>
             {cards.length > 0 && (
               <Text style={styles.body}>
                 Vence em {shortMonth(month)}: <Money value={dueThisMonth} />
               </Text>
             )}
             {accounts.map((a) => (
-              <Pressable key={a.id} style={styles.item} onPress={() => navigation.navigate('AccountForm', { id: a.id })} accessibilityRole="button" accessibilityLabel={`Editar conta ${a.bank}`}>
+              <Pressable key={a.id} style={styles.item} onPress={() => navigation.navigate('AccountForm', { id: a.id })} accessibilityRole="button" accessibilityHint="Editar conta">
                 <Text style={styles.flex}>{KIND_LABEL[a.kind]}</Text>
                 <Money value={a.balance} style={styles.strong} />
               </Pressable>
@@ -62,7 +64,7 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
               const future = cents(profile.installments.filter((i) => i.cardId === c.id && i.dueMonth > month).reduce((s, i) => s + i.amount, 0));
               return (
                 <View key={c.id} style={styles.cardBox}>
-                  <Pressable onPress={() => navigation.navigate('CardForm', { id: c.id })} accessibilityRole="button" accessibilityLabel={`Editar cartão ${c.bank} ${c.name}`}>
+                  <Pressable onPress={() => navigation.navigate('CardForm', { id: c.id })} accessibilityRole="button" accessibilityHint="Editar cartão">
                     <Text style={styles.strong}>{c.name}</Text>
                     <Text style={styles.meta}>
                       Fecha dia {c.closingDay} · vence dia {c.dueDay}
@@ -90,11 +92,13 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
 
       {profile.debts.length > 0 && (
         <Card>
-          <Text style={styles.bank}>Dívidas e financiamentos</Text>
+          <Text style={styles.bank} accessibilityRole="header">
+            Dívidas e financiamentos
+          </Text>
           {profile.debts.map((d) => {
             const status = debtStatus(d, month);
             return (
-              <Pressable key={d.id} style={styles.item} onPress={() => navigation.navigate('DebtForm', { id: d.id })} accessibilityRole="button" accessibilityLabel={`Editar ${d.name}`}>
+              <Pressable key={d.id} style={styles.item} onPress={() => navigation.navigate('DebtForm', { id: d.id })} accessibilityRole="button" accessibilityHint="Editar dívida">
                 <View style={styles.flex}>
                   <Text style={styles.strong}>{d.name}</Text>
                   <Text style={styles.meta}>{status ? `faltam ${status.left} parcelas · vence dia ${d.dueDay}` : 'quitada'}</Text>

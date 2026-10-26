@@ -4,7 +4,8 @@ import type { Account, Card, Debt, Entry, Goal, Installment, Invoice, Parameter,
 import type { SqlParam } from './driver';
 
 export function toCents(reais: number): number {
-  if (!Number.isFinite(reais) || Math.abs(reais) > 1e9) throw new RangeError(`Invalid amount: ${reais}`);
+  // No values in messages: errors may be logged (security review).
+  if (!Number.isFinite(reais) || Math.abs(reais) > 1e9) throw new RangeError('Invalid amount');
   return Math.round(reais * 100);
 }
 
@@ -52,16 +53,16 @@ export const installmentToParams = (i: Installment): SqlParam[] => [i.id, i.card
 
 export interface InvoiceRow {
   id: string; card_id: string; due_month: string; amount_cents: number; origin: Invoice['origin']; status: Invoice['status'];
-  paid_cents: number | null; partial_plan_months: number | null; estimated_cents_at_confirm: number | null;
+  paid_cents: number | null; partial_plan_months: number | null; estimated_cents_at_confirm: number | null; paid_on: string | null;
 }
 export const invoiceFromRow = (r: InvoiceRow): Invoice => ({
   id: r.id, cardId: r.card_id, dueMonth: r.due_month, amount: fromCents(r.amount_cents), origin: r.origin, status: r.status,
-  paidAmount: fromCentsOpt(r.paid_cents), partialPlanMonths: opt(r.partial_plan_months),
+  paidAmount: fromCentsOpt(r.paid_cents), paidOn: opt(r.paid_on), partialPlanMonths: opt(r.partial_plan_months),
   estimatedAtConfirm: fromCentsOpt(r.estimated_cents_at_confirm),
 });
 export const invoiceToParams = (i: Invoice): SqlParam[] => [
   i.id, i.cardId, i.dueMonth, toCents(i.amount), i.origin, i.status, centsOrNull(i.paidAmount), orNull(i.partialPlanMonths),
-  centsOrNull(i.estimatedAtConfirm),
+  centsOrNull(i.estimatedAtConfirm), orNull(i.paidOn),
 ];
 
 export interface DebtRow {
@@ -73,7 +74,7 @@ export const debtFromRow = (r: DebtRow): Debt => ({
   system: r.system, startMonth: r.start_month, dueDay: r.due_day,
 });
 export const debtToParams = (d: Debt): SqlParam[] => {
-  if (!Number.isFinite(d.monthlyRate) || d.monthlyRate < 0) throw new RangeError(`Invalid rate: ${d.monthlyRate}`);
+  if (!Number.isFinite(d.monthlyRate) || d.monthlyRate < 0) throw new RangeError('Invalid rate');
   return [d.id, d.name, d.kind, toCents(d.principal), d.monthlyRate, d.months, d.system, d.startMonth, d.dueDay];
 };
 
@@ -86,7 +87,7 @@ export const goalToParams = (g: Goal): SqlParam[] => [g.id, g.name, toCents(g.ta
 export interface ParameterRow { key: Parameter['key']; effective_from: string; value: number; source: string; note: string | null }
 export const parameterFromRow = (r: ParameterRow): Parameter => ({ key: r.key, effectiveFrom: r.effective_from, value: r.value, source: r.source, note: opt(r.note) });
 export const parameterToParams = (p: Parameter): SqlParam[] => {
-  if (!Number.isFinite(p.value)) throw new RangeError(`Invalid parameter value: ${p.value}`);
+  if (!Number.isFinite(p.value)) throw new RangeError('Invalid parameter value');
   return [p.key, p.effectiveFrom, p.value, p.source, orNull(p.note)];
 };
 

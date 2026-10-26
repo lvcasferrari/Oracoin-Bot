@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { paramRow } from '../../engine';
+import { param, paramRow, type ParamKey } from '../../engine';
 import { restoreParameterDefault, saveParameter, USER_SOURCE } from '../../db/repos';
-import { Button, Chips, FormError, FormScreen, Input, trySave } from '../../components/form';
+import { Button, Chips, FormError, FormScreen, Input, trySave, useBusy } from '../../components/form';
+
+// Score and semáforo bands must stay ordered (equal bands would divide by zero in the score).
+const BANDS: readonly ParamKey[] = ['commitment_band_yellow', 'commitment_band_orange', 'commitment_band_red'];
 import { formatDateBR } from '../../lib/dateInput';
 import { displayParam, PARAM_INFO, paramInput, parseParamInput } from '../../lib/paramInfo';
 import type { PlanoStackParamList } from '../../navigation/types';
@@ -20,22 +23,31 @@ export function ParameterFormScreen({ route, navigation }: NativeStackScreenProp
   const [error, setError] = useState<string>();
   const [formError, setFormError] = useState<string>();
   const edited = profile.parameters.some((p) => p.key === key && p.source === USER_SOURCE);
+  const [busy, run] = useBusy();
 
-  const save = async () => {
-    const value = parseParamInput(key, text);
-    if (value === null) return setError(`Use um valor entre ${info.min} e ${info.max}.`);
-    if (await trySave(() => saveParameter(db, { key, value, effectiveFrom: today, source: USER_SOURCE }).then(() => undefined), setFormError)) {
-      await refresh();
-      navigation.goBack();
-    }
-  };
+  const save = () =>
+    run(async () => {
+      const value = parseParamInput(key, text);
+      if (value === null) return setError(`Use um valor entre ${info.min} e ${info.max}.`);
+      if ((BANDS as readonly string[]).includes(key)) {
+        const [yellow, orange, red] = BANDS.map((k) => (k === key ? value : param(profile.parameters, k, today)));
+        if (!(yellow < orange && orange < red)) return setError('As faixas precisam ficar em ordem: amarelo < laranja < vermelho.');
+      }
+      const ok = await trySave(async () => {
+        await saveParameter(db, { key, value, effectiveFrom: today, source: USER_SOURCE });
+        await refresh();
+      }, setFormError);
+      if (ok) navigation.goBack();
+    });
 
-  const restore = async () => {
-    if (await trySave(() => restoreParameterDefault(db, key).then(() => undefined), setFormError)) {
-      await refresh();
-      navigation.goBack();
-    }
-  };
+  const restore = () =>
+    run(async () => {
+      const ok = await trySave(async () => {
+        await restoreParameterDefault(db, key);
+        await refresh();
+      }, setFormError);
+      if (ok) navigation.goBack();
+    });
 
   return (
     <FormScreen>
@@ -60,8 +72,8 @@ export function ParameterFormScreen({ route, navigation }: NativeStackScreenProp
         />
       )}
       <FormError message={formError} />
-      <Button title="Salvar" onPress={save} />
-      {edited && <Button title="Restaurar padrão" kind="secondary" onPress={restore} />}
+      <Button title="Salvar" onPress={save} disabled={busy} />
+      {edited && <Button title="Restaurar padrão" kind="secondary" onPress={restore} disabled={busy} />}
     </FormScreen>
   );
 }

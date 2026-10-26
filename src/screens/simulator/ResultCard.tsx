@@ -2,8 +2,10 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { criticalMonth, type ScenarioResult, type Verdict } from '../../engine';
 import { Disclaimer } from '../../components/Disclaimer';
+import { useAnnounce } from '../../components/form';
 import { Card, Money, Pill } from '../../components/ui';
 import { formatDateBR, shortMonth } from '../../lib/dateInput';
+import { formatBRL } from '../../lib/money';
 import { displayParam, PARAM_INFO } from '../../lib/paramInfo';
 
 const VERDICT: Record<Verdict, { tone: 'ok' | 'warn' | 'risk'; label: string; line: string }> = {
@@ -19,6 +21,8 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 export function ScenarioResultCard({ result, actions }: { result: ScenarioResult; actions?: ReactNode }) {
   const v = VERDICT[result.verdict];
   const { extras } = result;
+  // The verdict appears 150 ms after typing; screen readers hear it when it changes.
+  useAnnounce(`${v.label}. ${extras.payPartial ? 'Pior caso: ainda muito caro, mas tem teto.' : v.line}`);
   const critical = criticalMonth(result.result.monthly);
   const before = result.baseline.critical;
   const after = result.result.critical;
@@ -77,7 +81,12 @@ export function ScenarioResultCard({ result, actions }: { result: ScenarioResult
         {result.result.monthly.map((m) => {
           const isCritical = critical?.month === m.month;
           return (
-            <View key={m.month} style={[styles.month, isCritical && styles.monthCritical]} accessible accessibilityLabel={`${shortMonth(m.month)}: saldo no fim ${m.endBalance}`}>
+            <View
+              key={m.month}
+              style={[styles.month, isCritical && styles.monthCritical]}
+              accessible
+              accessibilityLabel={`${shortMonth(m.month)}: saldo no fim ${formatBRL(m.endBalance)}${isCritical ? ', mês mais crítico' : ''}`}
+            >
               <Text style={styles.monthLabel}>{shortMonth(m.month)}</Text>
               <Money value={m.endBalance} style={[styles.monthValue, m.endBalance < 0 && styles.negative]} />
               {isCritical && <Text style={styles.criticalText}>mais crítico</Text>}
@@ -110,11 +119,15 @@ export function ScenarioResultCard({ result, actions }: { result: ScenarioResult
         ))}
 
       {/* 5. Three exits */}
-      <Text style={styles.section}>Três saídas</Text>
+      <Text style={styles.section} accessibilityRole="header">
+        Três saídas
+      </Text>
       {actions ?? <Text style={styles.hint}>Em breve: saídas com custo calculado.</Text>}
 
       {/* 6. Assumptions and uncertainty */}
-      <Text style={styles.section}>Premissas</Text>
+      <Text style={styles.section} accessibilityRole="header">
+        Premissas
+      </Text>
       <Text style={styles.hint}>
         Menor saldo entre <Money value={result.uncertainty.low} /> e <Money value={result.uncertainty.high} />, conforme o gasto variável do cartão.
       </Text>
@@ -138,7 +151,7 @@ const styles = StyleSheet.create({
   hint: { fontSize: 12, opacity: 0.7 },
   negative: { color: '#b3261e', fontWeight: '600' },
   timeline: { gap: 8, paddingVertical: 6 },
-  month: { minWidth: 92, padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#8884' },
+  month: { minWidth: 92, padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#767676' },
   monthCritical: { borderColor: '#b3261e', borderWidth: 2 },
   monthLabel: { fontSize: 12, opacity: 0.7 },
   monthValue: { fontSize: 14, fontWeight: '600' },
