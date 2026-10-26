@@ -1,27 +1,28 @@
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { HojeScreen } from './src/screens/HojeScreen';
-import { FluxoScreen } from './src/screens/FluxoScreen';
-import { SimuladorScreen } from './src/screens/SimuladorScreen';
-import { BancosScreen } from './src/screens/BancosScreen';
-import { PlanoScreen } from './src/screens/PlanoScreen';
+import { RootTabs } from './src/navigation/RootTabs';
+import type { RootStackParamList } from './src/navigation/types';
+import { OnboardingPlaceholder } from './src/screens/onboarding/OnboardingPlaceholder';
+import { AppDataProvider } from './src/state/AppData';
+import { DataGate } from './src/state/DataGate';
 
-const Tab = createBottomTabNavigator();
+const Root = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <Tab.Navigator screenOptions={{ headerTitleAlign: 'center' }}>
-          <Tab.Screen name="Hoje" component={HojeScreen} />
-          <Tab.Screen name="Fluxo" component={FluxoScreen} />
-          <Tab.Screen name="E se…?" component={SimuladorScreen} />
-          <Tab.Screen name="Bancos" component={BancosScreen} />
-          <Tab.Screen name="Plano" component={PlanoScreen} />
-        </Tab.Navigator>
-      </NavigationContainer>
+      <AppDataProvider>
+        <DataGate>
+          <NavigationContainer>
+            <Root.Navigator>
+              <Root.Screen name="Tabs" component={RootTabs} options={{ headerShown: false }} />
+              <Root.Screen name="Onboarding" component={OnboardingPlaceholder} options={{ presentation: 'modal', title: 'Começar' }} />
+            </Root.Navigator>
+          </NavigationContainer>
+        </DataGate>
+      </AppDataProvider>
       <StatusBar style="auto" />
     </SafeAreaProvider>
   );

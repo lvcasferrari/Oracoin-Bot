@@ -1,16 +1,19 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { buildEvents, criticalDay, freeMargin, monthOf, profileBalance } from '../engine';
-import { sampleProfile } from '../data/sample';
+import { Disclaimer } from '../components/Disclaimer';
+import { EmptyState } from '../components/EmptyState';
 import { Money, Card, Pill } from '../components/ui';
-
-const TODAY = '2026-11-01';
+import { isEmptyProfile, useReadyData } from '../state/AppData';
 
 export function HojeScreen() {
-  const month = monthOf(TODAY);
-  const events = buildEvents(sampleProfile, TODAY).filter((e) => monthOf(e.date) === month);
-  const low = criticalDay(profileBalance(sampleProfile), events);
-  const margin = freeMargin(sampleProfile, month, TODAY);
-  const nextDue = events.find((e) => e.source === 'invoice');
+  const { profile, today } = useReadyData();
+  if (isEmptyProfile(profile)) return <EmptyState />;
+
+  const month = monthOf(today);
+  const events = buildEvents(profile, today).filter((e) => monthOf(e.date) === month);
+  const low = criticalDay(profileBalance(profile), events);
+  const margin = freeMargin(profile, month, today);
+  const nextDue = events.find((e) => e.source === 'invoice' && e.date >= today);
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -40,7 +43,7 @@ export function HojeScreen() {
         </Card>
       )}
 
-      <Text style={styles.footer}>Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito.</Text>
+      <Disclaimer />
     </ScrollView>
   );
 }
@@ -51,5 +54,4 @@ const styles = StyleSheet.create({
   big: { fontSize: 32, fontWeight: '600' },
   body: { fontSize: 16 },
   hint: { fontSize: 12, opacity: 0.6 },
-  footer: { fontSize: 11, opacity: 0.5, marginTop: 8 },
 });

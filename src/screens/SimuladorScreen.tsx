@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, Pressable } from 'react-native';
 import { simulatePurchase, type Verdict } from '../engine';
-import { sampleProfile } from '../data/sample';
+import { Disclaimer } from '../components/Disclaimer';
+import { EmptyState } from '../components/EmptyState';
 import { Card, Money, Pill } from '../components/ui';
-
-const TODAY = '2026-11-01';
+import { isEmptyProfile, useReadyData } from '../state/AppData';
 
 const labels: Record<Verdict, string> = {
   confortavel: 'Confortável',
@@ -14,28 +14,43 @@ const labels: Record<Verdict, string> = {
 };
 
 export function SimuladorScreen() {
+  const { profile, today } = useReadyData();
   const [total, setTotal] = useState('3000');
   const [parcelas, setParcelas] = useState('6');
-  const [cardId, setCardId] = useState(sampleProfile.cards[0].id);
+  const [cardId, setCardId] = useState<string | undefined>(profile.cards[0]?.id);
+
+  if (isEmptyProfile(profile)) return <EmptyState />;
+  const card = profile.cards.find((c) => c.id === cardId) ?? profile.cards[0];
+  if (!card) {
+    return (
+      <ScrollView contentContainerStyle={styles.page}>
+        <Text style={styles.body}>Cadastre um cartão em Bancos para simular uma compra parcelada.</Text>
+      </ScrollView>
+    );
+  }
 
   const amount = Number(total.replace(',', '.'));
   const n = Math.floor(Number(parcelas));
   const valid = Number.isFinite(amount) && amount > 0 && Number.isInteger(n) && n >= 1;
-  const result = valid ? simulatePurchase(sampleProfile, { cardId, total: amount, installments: n }, TODAY) : null;
+  const result = valid ? simulatePurchase(profile, { cardId: card.id, total: amount, installments: n }, today) : null;
+  const nextCard = () => {
+    const ids = profile.cards.map((c) => c.id);
+    setCardId(ids[(ids.indexOf(card.id) + 1) % ids.length]);
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <Text style={styles.title}>Posso parcelar isso?</Text>
 
       <Text style={styles.label}>Valor da compra</Text>
-      <TextInput style={styles.input} keyboardType="decimal-pad" value={total} onChangeText={setTotal} />
+      <TextInput style={styles.input} keyboardType="decimal-pad" value={total} onChangeText={setTotal} accessibilityLabel="Valor da compra" />
 
       <Text style={styles.label}>Parcelas</Text>
-      <TextInput style={styles.input} keyboardType="number-pad" value={parcelas} onChangeText={setParcelas} />
+      <TextInput style={styles.input} keyboardType="number-pad" value={parcelas} onChangeText={setParcelas} accessibilityLabel="Número de parcelas" />
 
       <Text style={styles.label}>Cartão</Text>
-      <Pressable onPress={() => setCardId(nextCard(cardId))} style={styles.input}>
-        <Text>{sampleProfile.cards.find((c) => c.id === cardId)?.bank} (toque para trocar)</Text>
+      <Pressable onPress={nextCard} style={styles.input} accessibilityRole="button" accessibilityLabel="Trocar cartão">
+        <Text>{card.bank} · {card.name} (toque para trocar)</Text>
       </Pressable>
 
       {result && (
@@ -53,21 +68,15 @@ export function SimuladorScreen() {
         </Card>
       )}
 
-      <Text style={styles.footer}>Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito.</Text>
+      <Disclaimer />
     </ScrollView>
   );
-}
-
-function nextCard(current: string): string {
-  const ids = sampleProfile.cards.map((c) => c.id);
-  return ids[(ids.indexOf(current) + 1) % ids.length];
 }
 
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 10 },
   title: { fontSize: 22, fontWeight: '600', marginBottom: 4 },
   label: { fontSize: 13, opacity: 0.6, marginTop: 6 },
-  input: { borderWidth: 1, borderColor: '#8886', borderRadius: 10, padding: 12, fontSize: 16 },
+  input: { borderWidth: 1, borderColor: '#8886', borderRadius: 10, padding: 12, fontSize: 16, minHeight: 44 },
   body: { fontSize: 16 },
-  footer: { fontSize: 11, opacity: 0.5, marginTop: 12 },
 });

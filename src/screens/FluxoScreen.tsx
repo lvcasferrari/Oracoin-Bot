@@ -1,14 +1,17 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { addMonths, buildEvents, cashProjection, monthOf, profileBalance } from '../engine';
-import { sampleProfile } from '../data/sample';
+import { Disclaimer } from '../components/Disclaimer';
+import { EmptyState } from '../components/EmptyState';
 import { Money } from '../components/ui';
-
-const TODAY = '2026-11-01';
+import { isEmptyProfile, useReadyData } from '../state/AppData';
 
 export function FluxoScreen() {
-  const lastMonth = addMonths(monthOf(TODAY), 2);
-  const events = buildEvents(sampleProfile, TODAY).filter((e) => monthOf(e.date) <= lastMonth);
-  const rows = cashProjection(profileBalance(sampleProfile), events);
+  const { profile, today } = useReadyData();
+  if (isEmptyProfile(profile)) return <EmptyState />;
+
+  const lastMonth = addMonths(monthOf(today), 2);
+  const events = buildEvents(profile, today).filter((e) => monthOf(e.date) <= lastMonth);
+  const rows = cashProjection(profileBalance(profile), events);
 
   return (
     <FlatList
@@ -20,12 +23,18 @@ export function FluxoScreen() {
           <Text style={styles.date}>{item.date.slice(5)}</Text>
           <Text style={styles.label} numberOfLines={1}>
             {events[index].label}
+            {events[index].estimated ? ' (estimado)' : ''}
           </Text>
           <Money value={events[index].amount} />
           <Money value={item.balance} style={styles.balance} />
         </View>
       )}
-      ListFooterComponent={<Text style={styles.hint}>Saldo projetado após cada movimento. Faturas caem no vencimento, não na compra.</Text>}
+      ListFooterComponent={
+        <>
+          <Text style={styles.hint}>Saldo projetado após cada movimento. Faturas caem no vencimento, não na compra.</Text>
+          <Disclaimer />
+        </>
+      }
     />
   );
 }
