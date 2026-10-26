@@ -1,7 +1,8 @@
-# Credenciais
-firebase-key.json
-google-sheets-credentials.json
-token.json
-
-# Outros
-__pycache__/
+node_modules/
+.expo/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
