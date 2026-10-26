@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { StyleProp, StyleSheet, Text, TextStyle, View } from 'react-native';
 
-export const formatBRL = (value: number): string =>
-  value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+import { formatBRL } from '../lib/money';
+
+export { formatBRL };
 
 /** Money text in BRL. */
 export function Money({ value, style }: { value: number; style?: StyleProp<TextStyle> }) {

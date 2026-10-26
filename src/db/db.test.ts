@@ -5,7 +5,7 @@ import { loadProfile, saveProfile } from './loadProfile';
 import { toCents } from './mappers';
 import { migrate, MIGRATIONS, type Migration } from './migrations';
 import { nodeDriver } from './nodeDriver';
-import { listInvoices, listParameters, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
+import { listInvoices, listParameters, replaceCardInstallments, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
 import { resetAll } from './reset';
 
 const fresh = async () => {
@@ -140,6 +140,20 @@ describe('constraints', () => {
       }),
     ).rejects.toThrow('boom');
     expect(await count(db, 'cards')).toBe(0);
+  });
+});
+
+describe('installments grid', () => {
+  it('replaces only the edited months and keeps earlier ones', async () => {
+    const db = await fresh();
+    await saveProfile(db, fullProfile); // nu: 2026-11 and 2026-12
+    await replaceCardInstallments(db, 'nu', '2026-12', [{ id: 'n1', cardId: 'nu', dueMonth: '2027-01', amount: 400 }]);
+    const rows = (await loadProfile(db)).installments.filter((i) => i.cardId === 'nu');
+    expect(rows.map((i) => [i.dueMonth, i.amount])).toEqual([['2026-11', 1200], ['2027-01', 400]]);
+  });
+  it('refuses rows outside the edited months', async () => {
+    const db = await fresh();
+    await expect(replaceCardInstallments(db, 'nu', '2026-12', [{ id: 'x', cardId: 'nu', dueMonth: '2026-11', amount: 1 }])).rejects.toThrow();
   });
 });
 

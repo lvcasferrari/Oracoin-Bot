@@ -14,11 +14,14 @@ export const saveInstallment = (db: SqlDriver, i: Installment) =>
 
 export const removeInstallment = (db: SqlDriver, id: string) => db.run('DELETE FROM installments WHERE id = ?', [id]);
 
-/** Replaces one card's monthly installment sums in one transaction (the month grid form). */
-export async function replaceCardInstallments(db: SqlDriver, cardId: string, rows: Installment[]): Promise<void> {
-  if (rows.some((r) => r.cardId !== cardId)) throw new Error('All installments must belong to the card');
+/**
+ * Replaces one card's monthly installment sums from `fromMonth` on, in one transaction (the month
+ * grid form). Months before `fromMonth` are left as they are.
+ */
+export async function replaceCardInstallments(db: SqlDriver, cardId: string, fromMonth: string, rows: Installment[]): Promise<void> {
+  if (rows.some((r) => r.cardId !== cardId || r.dueMonth < fromMonth)) throw new Error('Installments must belong to the card and the edited months');
   await db.transaction(async (tx) => {
-    await tx.run('DELETE FROM installments WHERE card_id = ?', [cardId]);
+    await tx.run('DELETE FROM installments WHERE card_id = ? AND due_month >= ?', [cardId, fromMonth]);
     for (const r of rows) if (r.amount > 0) await saveInstallment(tx, r);
   });
 }
