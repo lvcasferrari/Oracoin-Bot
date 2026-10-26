@@ -7,16 +7,18 @@ export class MissingParameterError extends Error {
   }
 }
 
-/** Value of `key` from the row with the latest `effectiveFrom` on or before `onDate`. Never defaults. */
-export function param(params: Parameter[], key: ParamKey, onDate: string): number {
+/** The row of `key` with the latest `effectiveFrom` on or before `onDate`. Never defaults. */
+export function paramRow(params: Parameter[], key: ParamKey, onDate: string): Parameter {
   let best: Parameter | undefined;
   for (const p of params) {
     if (p.key !== key || p.effectiveFrom > onDate) continue;
     if (!best || p.effectiveFrom > best.effectiveFrom) best = p;
   }
   if (!best) throw new MissingParameterError(key, onDate);
-  return best.value;
+  return best;
 }
+
+export const param = (params: Parameter[], key: ParamKey, onDate: string): number => paramRow(params, key, onDate).value;
 
 /** Equivalent monthly rate of an annual rate: (1 + a)^(1/12) − 1. */
 export const annualToMonthly = (annual: number): number => (1 + annual) ** (1 / 12) - 1;
