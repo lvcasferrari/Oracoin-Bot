@@ -854,3 +854,12 @@ Spec 10 step 7 asks for 10 interviews, a price test and a clickable prototype be
   - steps 02 and 08 split into 04/05 and 11/12 (MEDIUM);
   - score edge cases, `resetAll` over every table, guardrail tests, `TZ` pinned, the round-trip rule, action #3's comparison, and spec catalog numbering (MEDIUM);
   - the unused `rotativo_max_days` dropped, and the default rates set to the exact conversions (0.1518 and 0.0934) (MEDIUM).
+- 2026-10-26 execution: steps 01–13 done and merged into `feat/life-strategic-plan-app` (200 tests, `expo-doctor` 20/20, iOS and Android bundles 200 after every UI step). Step 14 is still blocked on a sample spreadsheet. Deviations from the step text:
+  - **Step 04:** 1234.565 stores as 1234.57, not 1234.56 (JS float). The test asserts what matters: DB value = engine `cents()`.
+  - **Step 05:** `@react-navigation/native-stack` was installed here instead of in step 06, because the Onboarding route needed a root stack.
+  - **Step 06:** form controls live in one `src/components/form.tsx` (`MoneyInput`, `DayInput`, `Chips`, `BankPicker`...), plus a `useForm` hook. Pure validation lives in `src/screens/forms/mappers.ts`. `availableLimit()` was added to the engine (`limit.ts`). The installments grid replaces only months from the first shown month on.
+  - **Step 07:** a month's `lowBalance` counts only post-event balances, to match `criticalDay`. A test caught a mismatch.
+  - **Step 09:** onboarding is one screen with five internal steps, not five stack screens. Each card's variable estimate is settled after the installments step.
+  - **Step 11:** `essentialOutflows()` moved into `metrics.ts` (shared by the score and the emergency scenario). Hypothetical events never land on or before the balance date. The performance test allows 250 ms in Node (the plan said 50), to avoid flaky CI; measured runs were far below that.
+  - **Step 12:** the disclaimer guardrail now checks every component that shows results (`ResultCard`, `RaioX`, `PayInvoiceScreen`...).
+  - **Step 13:** the banned-word list moved to `src/lib/copy.ts`. Importing it from a test file re-registered that file's tests.
