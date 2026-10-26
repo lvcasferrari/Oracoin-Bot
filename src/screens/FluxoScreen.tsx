@@ -1,13 +1,14 @@
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { buildEvents, cashProjection } from '../engine/engine';
+import { addMonths, buildEvents, cashProjection, monthOf, profileBalance } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { Money } from '../components/ui';
 
 const TODAY = '2026-11-01';
 
 export function FluxoScreen() {
-  const events = buildEvents(sampleProfile, TODAY, 3);
-  const rows = cashProjection(sampleProfile.balance, events);
+  const lastMonth = addMonths(monthOf(TODAY), 2);
+  const events = buildEvents(sampleProfile, TODAY).filter((e) => monthOf(e.date) <= lastMonth);
+  const rows = cashProjection(profileBalance(sampleProfile), events);
 
   return (
     <FlatList

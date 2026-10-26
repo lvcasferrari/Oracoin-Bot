@@ -1,33 +1,31 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { commitmentRatio, invoiceAmount } from '../engine/engine';
+import { commitmentRatio, monthOf, param, type Parameter } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { Card } from '../components/ui';
 
-const MONTH = '2026-11';
+const TODAY = '2026-11-01';
 
 // Referência do app (não padrão de mercado): comprometimento por faixa.
-function band(ratio: number): { label: string; note: string } {
-  if (ratio < 0.2) return { label: 'Verde', note: 'Comprometimento baixo' };
-  if (ratio < 0.3) return { label: 'Amarelo', note: 'Atenção: regra de 30% da renda' };
-  if (ratio < 0.5) return { label: 'Laranja', note: 'Aperta: mais de 30% da renda' };
+function band(ratio: number, params: Parameter[]): { label: string; note: string } {
+  if (ratio < param(params, 'commitment_band_yellow', TODAY)) return { label: 'Verde', note: 'Comprometimento baixo' };
+  if (ratio < param(params, 'commitment_band_orange', TODAY)) return { label: 'Amarelo', note: 'Atenção: perto de 30% da renda' };
+  if (ratio < param(params, 'commitment_band_red', TODAY)) return { label: 'Laranja', note: 'Aperta: mais de 30% da renda' };
   return { label: 'Vermelho', note: 'Sinal de alerta: mais de 50% da renda' };
 }
 
 export function PlanoScreen() {
-  const invoices = sampleProfile.cards.reduce((s, c) => s + invoiceAmount(c, sampleProfile.installments, MONTH), 0);
-  const fixed = sampleProfile.outflows.reduce((s, o) => s + o.amount, 0);
-  const ratio = commitmentRatio(invoices + fixed, sampleProfile.netIncome);
-  const current = band(ratio);
+  const ratio = commitmentRatio(sampleProfile, monthOf(TODAY), TODAY);
+  const current = band(ratio, sampleProfile.parameters);
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
       <Card>
         <Text style={styles.label}>Comprometimento do mês</Text>
-        <Text style={styles.big}>{Math.round(ratio * 100)}% da renda</Text>
+        <Text style={styles.big}>{Number.isFinite(ratio) ? `${Math.round(ratio * 100)}% da renda` : 'Sem renda no mês'}</Text>
         <Text style={styles.body}>
           {current.label}: {current.note}
         </Text>
-        <Text style={styles.hint}>Faixas são referência do app, não padrão oficial. Parâmetros editáveis.</Text>
+        <Text style={styles.hint}>Faturas e dívidas sobre a renda líquida. Faixas são referência do app, não padrão oficial.</Text>
       </Card>
       <Text style={styles.footer}>Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito.</Text>
     </ScrollView>
