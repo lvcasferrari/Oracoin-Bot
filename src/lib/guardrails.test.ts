@@ -38,10 +38,20 @@ describe('guardrails', () => {
       expect(/\b(TODAY|FIRST_MONTH|sampleProfile)\b|'20\d{2}-\d{2}/.test(text), path).toBe(false);
     }
   });
-  it('shows the disclaimer on every screen with projections or simulations', () => {
-    for (const name of ['HojeScreen.tsx', 'FluxoScreen.tsx', 'SimuladorScreen.tsx', 'PlanoScreen.tsx']) {
-      const screen = source.find((f) => f.path === `screens/${name}`);
-      expect(screen?.text.includes('<Disclaimer'), name).toBe(true);
+  it('shows the disclaimer wherever projections or simulations appear', () => {
+    const withResults = [
+      'screens/HojeScreen.tsx',
+      'screens/FluxoScreen.tsx',
+      'screens/PlanoScreen.tsx',
+      'screens/simulator/ResultCard.tsx',
+      'screens/onboarding/RaioX.tsx',
+      'screens/upkeep/PayInvoiceScreen.tsx',
+    ];
+    for (const path of withResults) {
+      const file = source.find((f) => f.path === path);
+      expect(file?.text.includes('<Disclaimer'), path).toBe(true);
     }
+    // The simulator shows results only through the result card.
+    expect(source.find((f) => f.path === 'screens/SimuladorScreen.tsx')?.text.includes('<ScenarioResultCard')).toBe(true);
   });
 });
