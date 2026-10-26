@@ -8,4 +8,5 @@ export * from './events';
 export * from './metrics';
 export * from './limit';
 export * from './summary';
+export * from './upkeep';
 export * from './simulator';
