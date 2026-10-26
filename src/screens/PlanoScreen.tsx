@@ -185,6 +185,14 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
 
       <Card>
         <Text style={styles.label} accessibilityRole="header">
+          Importar planilha
+        </Text>
+        <Text style={styles.body}>Traga entradas, saídas, cartões, parcelas, dívidas e cenários de uma planilha .xlsx.</Text>
+        <Button title="Importar planilha" kind="secondary" onPress={() => navigation.navigate('Import')} />
+      </Card>
+
+      <Card>
+        <Text style={styles.label} accessibilityRole="header">
           Privacidade
         </Text>
         <Text style={styles.body}>
