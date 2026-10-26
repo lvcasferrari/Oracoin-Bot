@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, Pressable } from 'react-native';
-import { simulatePurchase, type Verdict } from '../engine/simulator';
+import { simulatePurchase, type Verdict } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { Card, Money, Pill } from '../components/ui';
 
-const FIRST_MONTH = '2026-12';
+const TODAY = '2026-11-01';
 
 const labels: Record<Verdict, string> = {
   confortavel: 'Confortável',
@@ -18,12 +18,10 @@ export function SimuladorScreen() {
   const [parcelas, setParcelas] = useState('6');
   const [cardId, setCardId] = useState(sampleProfile.cards[0].id);
 
-  const total_ = Number(total.replace(',', '.'));
-  const n = Math.max(1, Math.floor(Number(parcelas)));
-  const valid = Number.isFinite(total_) && total_ > 0 && Number.isFinite(n);
-  const result = valid
-    ? simulatePurchase(sampleProfile, { cardId, total: total_, installments: n, firstMonth: FIRST_MONTH }, '2026-11-01')
-    : null;
+  const amount = Number(total.replace(',', '.'));
+  const n = Math.floor(Number(parcelas));
+  const valid = Number.isFinite(amount) && amount > 0 && Number.isInteger(n) && n >= 1;
+  const result = valid ? simulatePurchase(sampleProfile, { cardId, total: amount, installments: n }, TODAY) : null;
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -46,7 +44,7 @@ export function SimuladorScreen() {
             {labels[result.verdict]}
           </Pill>
           <Text style={styles.body}>
-            Parcela de <Money value={result.monthlyInstallment} /> a partir de dez/2026.
+            Parcela de <Money value={result.monthlyInstallment} /> a partir da fatura de {result.firstMonth.slice(5)}/{result.firstMonth.slice(0, 4)}.
           </Text>
           <Text style={styles.body}>
             Menor saldo projetado: <Money value={result.baselineLow} /> hoje, <Money value={result.scenarioLow} /> com a compra.

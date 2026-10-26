@@ -1,15 +1,16 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { buildEvents, criticalDay, freeMargin } from '../engine/engine';
+import { buildEvents, criticalDay, freeMargin, monthOf, profileBalance } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { Money, Card, Pill } from '../components/ui';
 
 const TODAY = '2026-11-01';
 
 export function HojeScreen() {
-  const events = buildEvents(sampleProfile, TODAY, 1);
-  const low = criticalDay(sampleProfile.balance, events);
-  const margin = freeMargin(sampleProfile, '2026-11');
-  const nextDue = events.find((e) => e.label.startsWith('Fatura'));
+  const month = monthOf(TODAY);
+  const events = buildEvents(sampleProfile, TODAY).filter((e) => monthOf(e.date) === month);
+  const low = criticalDay(profileBalance(sampleProfile), events);
+  const margin = freeMargin(sampleProfile, month, TODAY);
+  const nextDue = events.find((e) => e.source === 'invoice');
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
@@ -26,7 +27,7 @@ export function HojeScreen() {
             {nextDue.label}: dia {nextDue.date.slice(8)}
           </Text>
           <Money value={nextDue.amount} style={styles.body} />
-          <Text style={styles.hint}>Estimado: parcelas previstas mais a média do cartão.</Text>
+          {nextDue.estimated && <Text style={styles.hint}>Estimado: parcelas previstas mais a média do cartão.</Text>}
         </Card>
       )}
 

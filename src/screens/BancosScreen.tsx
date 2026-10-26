@@ -1,15 +1,16 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
-import { invoiceAmount } from '../engine/engine';
+import { invoiceFor, monthOf } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { Card, Money } from '../components/ui';
 
-const MONTH = '2026-11';
+const TODAY = '2026-11-01';
 
 export function BancosScreen() {
+  const month = monthOf(TODAY);
   return (
     <ScrollView contentContainerStyle={styles.page}>
       {sampleProfile.cards.map((card) => {
-        const invoice = invoiceAmount(card, sampleProfile.installments, MONTH);
+        const invoice = invoiceFor(sampleProfile, card, month, TODAY);
         const committed = sampleProfile.installments
           .filter((i) => i.cardId === card.id)
           .reduce((s, i) => s + i.amount, 0);
@@ -22,7 +23,7 @@ export function BancosScreen() {
               Fecha dia {card.closingDay}, vence dia {card.dueDay}
             </Text>
             <Text style={styles.body}>
-              Fatura de nov: <Money value={invoice} />
+              Fatura do mês: <Money value={invoice.total} /> {invoice.estimated ? '(estimado)' : '(confirmado)'}
             </Text>
             <Text style={styles.body}>
               Parcelas futuras: <Money value={committed} />
