@@ -1,19 +1,19 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { invoiceFor, monthOf } from '../engine';
-import { sampleProfile } from '../data/sample';
+import { EmptyState } from '../components/EmptyState';
 import { Card, Money } from '../components/ui';
-
-const TODAY = '2026-11-01';
+import { isEmptyProfile, useReadyData } from '../state/AppData';
 
 export function BancosScreen() {
-  const month = monthOf(TODAY);
+  const { profile, today } = useReadyData();
+  if (isEmptyProfile(profile)) return <EmptyState />;
+  const month = monthOf(today);
+
   return (
     <ScrollView contentContainerStyle={styles.page}>
-      {sampleProfile.cards.map((card) => {
-        const invoice = invoiceFor(sampleProfile, card, month, TODAY);
-        const committed = sampleProfile.installments
-          .filter((i) => i.cardId === card.id)
-          .reduce((s, i) => s + i.amount, 0);
+      {profile.cards.map((card) => {
+        const invoice = invoiceFor(profile, card, month, today);
+        const committed = profile.installments.filter((i) => i.cardId === card.id).reduce((s, i) => s + i.amount, 0);
         return (
           <Card key={card.id}>
             <Text style={styles.bank}>
