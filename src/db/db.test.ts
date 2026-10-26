@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PARAMETERS, PARAM_KEYS, cents, type Profile } from '../engine';
+import { DEFAULT_PARAMETERS, PARAM_KEYS, cents, worstCase, type Profile } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { loadProfile, saveProfile } from './loadProfile';
 import { toCents } from './mappers';
@@ -69,6 +69,14 @@ describe('parameter seed', () => {
         source: d.source,
       });
     }
+  });
+  it('makes an edited rate drive the worst case from its date on', async () => {
+    const db = await fresh();
+    const before = worstCase(1000, 12, (await loadProfile(db)).parameters, '2026-12-01').totalPaid;
+    await saveParameter(db, { key: 'rotativo_monthly_rate', value: 0.25, effectiveFrom: '2026-12-01', source: USER_SOURCE });
+    const params = (await loadProfile(db)).parameters;
+    expect(worstCase(1000, 12, params, '2026-12-01').totalPaid).toBeGreaterThan(before);
+    expect(worstCase(1000, 12, params, '2026-11-30').totalPaid).toBe(before);
   });
   it('updates a same-day edit instead of failing', async () => {
     const db = await fresh();

@@ -1,5 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { Entry } from '../engine';
+import type { Entry, ParamKey } from '../engine';
 
 export type RootStackParamList = {
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
@@ -46,4 +46,6 @@ export type BancosStackParamList = {
 
 export type PlanoStackParamList = {
   PlanoHome: undefined;
+  GoalForm: { id?: string } | undefined;
+  ParameterForm: { key: ParamKey };
 };
