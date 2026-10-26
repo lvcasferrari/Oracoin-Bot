@@ -4,8 +4,9 @@ import { FluxoStack } from './FluxoStack';
 import { HojeStack } from './HojeStack';
 import { PlanoStack } from './PlanoStack';
 import { SimularStack } from './SimularStack';
+import type { TabParamList } from './types';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<TabParamList>();
 
 export function RootTabs() {
   return (

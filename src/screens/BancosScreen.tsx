@@ -78,6 +78,9 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
                     </Text>
                   </Pressable>
                   <Button title="Parcelas futuras" kind="secondary" onPress={() => navigation.navigate('InstallmentsForm', { cardId: c.id })} />
+                  {invoice.row?.status !== 'paga' && (
+                    <Button title={`Registrar pagamento de ${shortMonth(month)}`} kind="secondary" onPress={() => navigation.navigate('PayInvoice', { cardId: c.id, dueMonth: month })} />
+                  )}
                 </View>
               );
             })}
