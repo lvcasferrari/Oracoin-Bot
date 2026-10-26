@@ -6,4 +6,5 @@ export * from './debt';
 export * from './rotativo';
 export * from './events';
 export * from './metrics';
+export * from './limit';
 export * from './simulator';
