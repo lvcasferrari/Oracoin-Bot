@@ -9,4 +9,6 @@ export * from './metrics';
 export * from './limit';
 export * from './summary';
 export * from './upkeep';
+export * from './goals';
+export * from './score';
 export * from './simulator';

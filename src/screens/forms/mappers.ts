@@ -1,5 +1,5 @@
 // Pure: form text → engine entities, with calm pt-BR messages. No react-native imports (tested in Vitest).
-import { monthOf, type Account, type Card, type Category, type Debt, type Entry, type Installment, type Profile } from '../../engine';
+import { dateInMonth, monthOf, type Account, type Card, type Category, type Debt, type Entry, type Goal, type Installment, type Profile } from '../../engine';
 import { parseDateBR, parseDay, parseMonthBR } from '../../lib/dateInput';
 import { parseBRL } from '../../lib/money';
 
@@ -143,6 +143,25 @@ export function installmentsFromGrid(cardId: string, values: Record<string, stri
     if (amount) rows.push({ id: makeId(), cardId, dueMonth: month, amount });
   }
   return done(errors, () => rows);
+}
+
+export interface GoalDraft { id: string; name: string; target: string; saved: string; deadline: string; priority: string }
+
+/** A goal; the deadline is a month ("12/2027") stored as that month's last day. */
+export function goalFromDraft(d: GoalDraft): Result<Goal> {
+  const errors: Record<string, string> = {};
+  if (!d.name.trim()) errors.name = MSG.required;
+  const target = money(errors, 'target', d.target, { required: true, positive: true });
+  const saved = money(errors, 'saved', d.saved) ?? 0;
+  let deadline: string | undefined;
+  if (d.deadline.trim()) {
+    const month = parseMonthBR(d.deadline);
+    if (!month) errors.deadline = MSG.month;
+    else deadline = dateInMonth(month, 31);
+  }
+  const priority = /^\s*\d+\s*$/.test(d.priority) ? Number(d.priority) : NaN;
+  if (!(priority >= 1 && priority <= 99)) errors.priority = 'Use um número de 1 a 99 (1 = mais importante).';
+  return done(errors, () => ({ id: d.id, name: d.name.trim(), target: target as number, saved, deadline, priority }));
 }
 
 /** What goes with a card when it is deleted (shown before confirming). */

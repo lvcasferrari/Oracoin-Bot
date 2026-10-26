@@ -6,6 +6,7 @@ import {
   cardFromDraft,
   debtFromDraft,
   entryFromDraft,
+  goalFromDraft,
   installmentsFromGrid,
   MSG,
   type CardDraft,
@@ -67,6 +68,12 @@ describe('form mappers', () => {
   });
   it('defaults an empty balance to zero', () => {
     expect(accountFromDraft({ id: 'a', bank: 'Itaú', kind: 'corrente', balance: '' })).toEqual({ ok: true, value: { id: 'a', bank: 'Itaú', kind: 'corrente', balance: 0 } });
+  });
+  it('builds a goal with its deadline at the end of the month', () => {
+    const r = goalFromDraft({ id: 'g', name: 'Reserva', target: '18.000', saved: '2.500', deadline: '02/2027', priority: '1' });
+    expect(r).toEqual({ ok: true, value: { id: 'g', name: 'Reserva', target: 18000, saved: 2500, deadline: '2027-02-28', priority: 1 } });
+    const bad = goalFromDraft({ id: 'g', name: '', target: '0', saved: '', deadline: '13/2027', priority: '0' });
+    expect(!bad.ok && Object.keys(bad.errors).sort()).toEqual(['deadline', 'name', 'priority', 'target']);
   });
   it('lists what goes with a deleted card', () => {
     const profile = makeProfile({
