@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PARAMETERS, PARAM_KEYS, cents, worstCase, type Profile } from '../engine';
+import { DEFAULT_PARAMETERS, PARAM_KEYS, applyChanges, cents, scenarioRows, worstCase, type Profile } from '../engine';
 import { sampleProfile } from '../data/sample';
 import { loadProfile, saveProfile } from './loadProfile';
 import { toCents } from './mappers';
 import { migrate, MIGRATIONS, type Migration } from './migrations';
 import { nodeDriver } from './nodeDriver';
-import { listInvoices, listParameters, replaceCardInstallments, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
+import { commitScenario, listInvoices, listParameters, replaceCardInstallments, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
 import { resetAll } from './reset';
 
 const fresh = async () => {
@@ -148,6 +148,29 @@ describe('constraints', () => {
       }),
     ).rejects.toThrow('boom');
     expect(await count(db, 'cards')).toBe(0);
+  });
+});
+
+describe('commitScenario', () => {
+  it('writes exactly the scenario rows', async () => {
+    const db = await fresh();
+    await saveProfile(db, fullProfile);
+    const before = await loadProfile(db);
+    const after = applyChanges(before, [{ type: 'purchase', cardId: 'nu', total: 600, installments: 3 }], '2026-11-01', (p) => `t-${p}-${Math.random()}`);
+    await commitScenario(db, scenarioRows(before, after));
+    const reloaded = await loadProfile(db);
+    expect(reloaded.installments.length).toBe(before.installments.length + 3);
+  });
+  it('writes nothing when one row fails', async () => {
+    const db = await fresh();
+    await saveProfile(db, fullProfile);
+    const before = await loadProfile(db);
+    const bad = { id: 'x', cardId: 'no-such-card', dueMonth: '2026-12', amount: 1 };
+    await expect(
+      commitScenario(db, { entries: [{ id: 'ok', kind: 'out', name: 'A', amount: 1, day: 1, recurrence: 'monthly', startMonth: '2026-11' }], installments: [bad], debts: [], invoices: [] }),
+    ).rejects.toThrow();
+    const reloaded = await loadProfile(db);
+    expect(reloaded.entries.length).toBe(before.entries.length);
   });
 });
 
