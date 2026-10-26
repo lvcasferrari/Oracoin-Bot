@@ -1,9 +1,9 @@
 import { addMonths, clamp, monthOf } from './dates';
-import { monthEvents, profileBalance } from './events';
+import { profileBalance } from './events';
 import { contributions, goalTimeline, onTrack } from './goals';
-import { commitmentRatio, freeMargin, netIncome } from './metrics';
+import { commitmentRatio, essentialOutflows, freeMargin, netIncome } from './metrics';
 import { param } from './params';
-import type { Category, ParamKey, Profile } from './types';
+import type { ParamKey, Profile } from './types';
 
 export type ScorePart = 'controle' | 'colchao' | 'metas' | 'liberdade';
 
@@ -13,8 +13,6 @@ export interface HealthScore {
   noGoals: boolean;
   topImprovement: string;
 }
-
-const ESSENTIAL: (Category | undefined)[] = ['moradia', 'alimentacao', 'transporte', 'dividas', undefined];
 
 const IMPROVE: Record<ScorePart, string> = {
   controle: 'Aumentar a sobra do mês é o que mais melhora sua nota.',
@@ -35,10 +33,7 @@ export function healthScore(profile: Profile, today: string): HealthScore {
 
   const controle = income <= 0 || margin < 0 ? 0 : clamp(margin / income / p('controle_full_margin_share'), 0, 1) * 100;
 
-  const essentials = monthEvents(profile, month, today)
-    .filter((e) => e.amount < 0)
-    .filter((e) => e.source !== 'entry' || ESSENTIAL.includes(profile.entries.find((x) => x.id === e.refId)?.category))
-    .reduce((s, e) => s - e.amount, 0);
+  const essentials = essentialOutflows(profile, month, today);
   const colchao = essentials <= 0 ? 100 : clamp(profileBalance(profile) / essentials / p('reserve_target_months'), 0, 1) * 100;
 
   const timeline = goalTimeline(profile.goals, contributions(profile, today));

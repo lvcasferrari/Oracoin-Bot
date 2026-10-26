@@ -1,6 +1,18 @@
 import { cents } from './dates';
 import { monthEvents } from './events';
-import type { Profile } from './types';
+import type { Category, Profile } from './types';
+
+const ESSENTIAL: (Category | undefined)[] = ['moradia', 'alimentacao', 'transporte', 'dividas', undefined];
+
+/** Essential outflows of a month: housing, food, transport, debts and uncategorised entries, plus invoices and debts. */
+export function essentialOutflows(profile: Profile, month: string, today: string): number {
+  return cents(
+    monthEvents(profile, month, today)
+      .filter((e) => e.amount < 0)
+      .filter((e) => e.source !== 'entry' || ESSENTIAL.includes(profile.entries.find((x) => x.id === e.refId)?.category))
+      .reduce((s, e) => s - e.amount, 0),
+  );
+}
 
 /** Expected income of `month`: the sum of its inflows. */
 export function netIncome(profile: Profile, month: string, today: string): number {

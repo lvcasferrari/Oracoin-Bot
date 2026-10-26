@@ -11,4 +11,5 @@ export * from './summary';
 export * from './upkeep';
 export * from './goals';
 export * from './score';
+export * from './scenarios';
 export * from './simulator';
