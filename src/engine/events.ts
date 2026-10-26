@@ -1,7 +1,8 @@
 import { addMonths, cents, dateInMonth, monthDiff, monthOf } from './dates';
 import { dueDate, invoiceMonthForCharge } from './cycle';
+import { debtPayment } from './debt';
 import { param } from './params';
-import type { CashEvent, Card, Debt, Entry, Invoice, Profile } from './types';
+import type { CashEvent, Card, Entry, Invoice, Profile } from './types';
 
 /** Date an entry falls on in `month`, or null when it does not occur that month. */
 export function entryOccurrence(entry: Entry, month: string): string | null {
@@ -11,11 +12,6 @@ export function entryOccurrence(entry: Entry, month: string): string | null {
   if (month < entry.startMonth || (entry.endMonth !== undefined && month > entry.endMonth)) return null;
   if (entry.recurrence === 'yearly' && month.slice(5) !== entry.startMonth.slice(5)) return null;
   return dateInMonth(month, entry.day);
-}
-
-// replaced in step 02 by the Price/SAC schedule
-export function debtPayment(_debt: Debt, _k: number): number {
-  throw new Error('debt engine: step 02');
 }
 
 /** Projected invoice: installments + variable estimate + card entries + partial-payment carry-over. */
