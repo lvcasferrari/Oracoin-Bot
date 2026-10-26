@@ -126,7 +126,7 @@ export function debtFromDraft(d: DebtDraft): Result<Debt> {
     name: d.name.trim(),
     kind: d.kind,
     principal: principal as number,
-    monthlyRate: (ratePct as number) / 100,
+    monthlyRate: Math.round((ratePct as number) * 1e4) / 1e6,
     months,
     system: d.system,
     startMonth: startMonth as string,
