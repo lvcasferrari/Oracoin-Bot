@@ -3,6 +3,7 @@ export * from './dates';
 export * from './params';
 export * from './cycle';
 export * from './debt';
+export * from './rotativo';
 export * from './events';
 export * from './metrics';
 export * from './simulator';

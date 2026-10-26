@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { cents } from './dates';
 import { buildEvents, cashProjection, criticalDay, invoiceFor, profileBalance } from './events';
+import { worstCase } from './rotativo';
 import { makeProfile, nubank, TODAY } from './testing';
 import type { Invoice } from './types';
 
@@ -36,13 +38,14 @@ describe('invoices in the cash flow', () => {
     const e = invoiceEvent(buildEvents(makeProfile({ invoices: [row({ status: 'paga' })] }), TODAY), '2026-11-12');
     expect(e?.amount).toBe(-2500);
   });
-  it('pays only the paid part of a partial invoice and carries the rest to the next invoice', () => {
+  it('pays only the paid part of a partial invoice and brings the rest back as the worst-case plan', () => {
     const profile = makeProfile({ invoices: [row({ amount: 2000, status: 'parcial', paidAmount: 500 })] });
     const today = '2026-11-20'; // the partial due date is already past, but after the balance date
     const events = buildEvents(profile, today);
+    const plan = worstCase(1500, 12, profile.parameters, today);
     expect(invoiceEvent(events, '2026-11-12')?.amount).toBe(-500);
-    expect(invoiceFor(profile, nubank, '2026-12', today).total).toBe(2300);
-    expect(invoiceEvent(events, '2026-12-12')?.amount).toBe(-2300);
+    expect(invoiceFor(profile, nubank, '2026-12', today).total).toBe(cents(800 + plan.payments[0]));
+    expect(invoiceEvent(events, '2026-12-12')?.amount).toBe(-cents(800 + plan.payments[0]));
   });
 });
 

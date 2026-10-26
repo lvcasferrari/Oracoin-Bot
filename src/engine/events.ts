@@ -2,6 +2,7 @@ import { addMonths, cents, dateInMonth, monthDiff, monthOf } from './dates';
 import { dueDate, invoiceMonthForCharge } from './cycle';
 import { debtPayment } from './debt';
 import { param } from './params';
+import { worstCase } from './rotativo';
 import type { CashEvent, Card, Entry, Invoice, Profile } from './types';
 
 /** Date an entry falls on in `month`, or null when it does not occur that month. */
@@ -29,11 +30,13 @@ export function projectedInvoice(profile: Profile, card: Card, month: string, to
       if (charged && invoiceMonthForCharge(card, charged, profile.parameters, today) === month) total += e.amount;
     }
   }
+  // The unpaid part of a partial invoice comes back on later invoices as the worst-case plan.
   for (const inv of profile.invoices) {
-    // replaced in step 03 by the worst-case plan
-    if (inv.cardId === card.id && inv.status === 'parcial' && addMonths(inv.dueMonth, 1) === month) {
-      total += inv.amount - (inv.paidAmount ?? 0);
-    }
+    if (inv.cardId !== card.id || inv.status !== 'parcial') continue;
+    const k = monthDiff(inv.dueMonth, month);
+    if (k < 1) continue;
+    const months = inv.partialPlanMonths ?? param(profile.parameters, 'partial_plan_default_months', today);
+    total += worstCase(inv.amount - (inv.paidAmount ?? 0), months, profile.parameters, today).payments[k - 1] ?? 0;
   }
   return cents(total);
 }
