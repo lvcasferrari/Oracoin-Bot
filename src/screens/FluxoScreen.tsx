@@ -5,7 +5,7 @@ import { Disclaimer } from '../components/Disclaimer';
 import { DueCalendar } from '../components/DueCalendar';
 import { EmptyState } from '../components/EmptyState';
 import { announce } from '../components/form';
-import { Card, Money, Pill } from '../components/ui';
+import { BarChart, Card, Money, Pill } from '../components/ui';
 import { shortMonth } from '../lib/dateInput';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
 
@@ -27,6 +27,10 @@ export function FluxoScreen() {
   const first = rows[0].month;
   const last = rows[rows.length - 1].month;
   const shown = month < first ? first : month > last ? last : month;
+  const openDay = (m: string) => {
+    setMonth(m);
+    setMode('dia');
+  };
   const goTo = (next: string) => {
     setMonth(next);
     announce(shortMonth(next));
@@ -48,38 +52,36 @@ export function FluxoScreen() {
         ))}
       </View>
 
-      {mode === 'mes' &&
-        rows.map((r) => {
-          const isCritical = critical?.month === r.month;
-          return (
-            <Pressable
-              key={r.month}
-              onPress={() => {
-                setMonth(r.month);
-                setMode('dia');
-              }}
-              accessibilityRole="button"
-              accessibilityHint="Abre o dia a dia deste mês"
-            >
-              <Card>
-                <View style={styles.rowHead}>
-                  <Text style={styles.month}>{shortMonth(r.month)}</Text>
-                  {isCritical && <Pill tone={r.lowBalance < 0 ? 'risk' : 'warn'}>Mês mais crítico</Pill>}
-                </View>
-                <Text style={styles.body}>
-                  Entra <Money value={r.income} /> · sai <Money value={cents(r.outflows + r.invoices + r.debts)} />
-                  {r.estimated ? ' (estimado)' : ''}
-                </Text>
-                <Text style={styles.body}>
-                  Sobra no mês: <Money value={r.margin} style={r.margin < 0 ? styles.negative : undefined} />
-                </Text>
-                <Text style={styles.body}>
-                  Saldo no fim: <Money value={r.endBalance} style={r.endBalance < 0 ? styles.negative : undefined} />
-                </Text>
-              </Card>
+      {mode === 'mes' && (
+        <Card>
+          <View style={styles.rowHead}>
+            <Text style={styles.month}>Saldo no fim do mês</Text>
+            {critical && <Pill tone={critical.lowBalance < 0 ? 'risk' : 'warn'}>Crítico: {shortMonth(critical.month)}</Pill>}
+          </View>
+          <BarChart
+            bars={rows.map((r) => ({ key: r.month, label: shortMonth(r.month).slice(0, 3), value: r.endBalance, highlight: critical?.month === r.month }))}
+            onPress={(b) => openDay(b.key)}
+          />
+          <View style={[styles.tableRow, styles.tableHead]}>
+            <Text style={styles.cellMonth}>Mês</Text>
+            <Text style={styles.cell}>Entra</Text>
+            <Text style={styles.cell}>Sai</Text>
+            <Text style={styles.cell}>Sobra</Text>
+          </View>
+          {rows.map((r) => (
+            <Pressable key={r.month} style={styles.tableRow} onPress={() => openDay(r.month)} accessibilityRole="button" accessibilityHint="Abre o dia a dia deste mês">
+              <Text style={styles.cellMonth}>
+                {shortMonth(r.month)}
+                {r.estimated ? '*' : ''}
+              </Text>
+              <Money value={r.income} style={styles.cell} />
+              <Money value={cents(r.outflows + r.invoices + r.debts)} style={styles.cell} />
+              <Money value={r.margin} style={[styles.cell, r.margin < 0 && styles.negative]} />
             </Pressable>
-          );
-        })}
+          ))}
+          {rows.some((r) => r.estimated) && <Text style={styles.hint}>* inclui faturas estimadas</Text>}
+        </Card>
+      )}
 
       {mode !== 'mes' && (
         <View style={styles.nav}>
@@ -157,4 +159,8 @@ const styles = StyleSheet.create({
   right: { alignItems: 'flex-end' },
   balance: { fontWeight: '600' },
   hint: { fontSize: 12, opacity: 0.6 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth, borderColor: '#8884' },
+  tableHead: { minHeight: 32, marginTop: 8 },
+  cellMonth: { flex: 1.2, fontSize: 14, fontWeight: '600' },
+  cell: { flex: 1, fontSize: 13, textAlign: 'right', fontVariant: ['tabular-nums'] },
 });

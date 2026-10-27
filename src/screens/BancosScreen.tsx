@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { availableLimit, cents, debtPayment, invoiceFor, monthDiff, monthOf, type Debt } from '../engine';
 import { Button } from '../components/form';
-import { Card, Money } from '../components/ui';
+import { Card, Meter, Money } from '../components/ui';
 import { formatDateBR, shortMonth } from '../lib/dateInput';
 import type { BancosStackParamList } from '../navigation/types';
 import { useReadyData } from '../state/AppData';
@@ -70,13 +70,12 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
                       Fecha dia {c.closingDay} · vence dia {c.dueDay}
                     </Text>
                     <Text style={styles.body}>
-                      Fatura de {shortMonth(month)}: <Money value={invoice.total} /> {invoice.estimated ? '(estimado)' : '(confirmado)'}
+                      Fatura {shortMonth(month)}: <Money value={invoice.total} style={styles.strong} />
+                      {invoice.estimated ? ' estimada' : ' confirmada'}
                     </Text>
-                    <Text style={styles.body}>
-                      Limite disponível: <Money value={limit.value} /> {limit.estimated ? '(estimativa)' : '(informado por você)'}
-                    </Text>
-                    <Text style={styles.body}>
-                      Parcelas nas próximas faturas: <Money value={future} />
+                    <Meter used={cents(c.limit - limit.value)} total={c.limit} label={limit.estimated ? 'Limite usado (estimativa)' : 'Limite usado'} />
+                    <Text style={styles.meta}>
+                      Livre <Money value={limit.value} /> · parcelas futuras <Money value={future} />
                     </Text>
                   </Pressable>
                   <Button title="Parcelas futuras" kind="secondary" onPress={() => navigation.navigate('InstallmentsForm', { cardId: c.id })} />
