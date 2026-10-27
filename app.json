@@ -17,6 +17,12 @@
     },
     "plugins": [
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "803ff2c7-bc97-49ec-b37b-69b8dfe75792"
+      }
+    },
+    "owner": "lucas_fs"
   }
 }
