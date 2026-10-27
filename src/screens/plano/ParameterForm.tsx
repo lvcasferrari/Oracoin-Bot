@@ -4,13 +4,13 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { param, paramRow, type ParamKey } from '../../engine';
 import { restoreParameterDefault, saveParameter, USER_SOURCE } from '../../db/repos';
 import { Button, Chips, FormError, FormScreen, Input, trySave, useBusy } from '../../components/form';
-
-// Score and semáforo bands must stay ordered (equal bands would divide by zero in the score).
-const BANDS: readonly ParamKey[] = ['commitment_band_yellow', 'commitment_band_orange', 'commitment_band_red'];
 import { formatDateBR } from '../../lib/dateInput';
 import { displayParam, PARAM_INFO, paramInput, parseParamInput } from '../../lib/paramInfo';
 import type { PlanoStackParamList } from '../../navigation/types';
 import { useReadyData } from '../../state/AppData';
+
+// Score and semáforo bands must stay ordered (equal bands would divide by zero in the score).
+const BANDS: readonly ParamKey[] = ['commitment_band_yellow', 'commitment_band_orange', 'commitment_band_red'];
 
 /** Edits a premissa: a new dated row from today; earlier values stay in the history (spec 06 rule 6). */
 export function ParameterFormScreen({ route, navigation }: NativeStackScreenProps<PlanoStackParamList, 'ParameterForm'>) {

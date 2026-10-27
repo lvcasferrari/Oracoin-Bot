@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { setOnboarded } from '../../db/repos';
@@ -13,7 +13,11 @@ const TITLES = ['Sua renda', 'Seus cartões', 'Parcelas que já existem', 'Conta
 /** Five short steps to the first useful view, in under 3 minutes (spec 07). */
 export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStackParamList, 'Onboarding'>) {
   const { db, today, refresh } = useReadyData();
-  const startedAt = useRef(Date.now());
+  // Set once on mount, not during render (render must stay pure).
+  const startedAt = useRef<number | null>(null);
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
   const [step, setStep] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string>();
@@ -25,7 +29,7 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
   const toTabs = () => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
 
   const toRaioX = () => {
-    setSeconds((Date.now() - startedAt.current) / 1000);
+    setSeconds((Date.now() - (startedAt.current ?? Date.now())) / 1000);
     setStep(4);
   };
 

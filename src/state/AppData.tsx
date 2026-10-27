@@ -33,7 +33,6 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true;
-    setStatus('loading');
     (async () => {
       const opened = await openDb();
       const loaded = await loadProfile(opened);
@@ -66,7 +65,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setMeta(await getProfileMeta(db));
   }, [db]);
 
-  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  // The loading state is set here, not inside the effect (no cascading render).
+  const retry = useCallback(() => {
+    setStatus('loading');
+    setAttempt((n) => n + 1);
+  }, []);
 
   const value = useMemo(() => ({ status, db, profile, meta, today, refresh, retry }), [status, db, profile, meta, today, refresh, retry]);
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
