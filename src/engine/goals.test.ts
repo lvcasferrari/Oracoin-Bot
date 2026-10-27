@@ -45,7 +45,10 @@ describe('goal delays', () => {
 describe('health score', () => {
   it('stays within 0–100 and explains what helps most', () => {
     const s = healthScore(makeProfile(), TODAY);
-    for (const v of Object.values(s.parts)) expect(v).toBeGreaterThanOrEqual(0), expect(v).toBeLessThanOrEqual(100);
+    for (const v of Object.values(s.parts)) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThanOrEqual(100);
+    }
     expect(s.noGoals).toBe(true);
     expect(s.topImprovement).toMatch(/melhora sua nota|em dia/);
   });

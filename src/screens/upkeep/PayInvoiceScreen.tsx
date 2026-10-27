@@ -6,7 +6,7 @@ import { cents, param, projectedInvoice, suggestActions, worstCase, type Invoice
 import { saveInvoice } from '../../db/repos';
 import { ActionsList } from '../../components/ActionsList';
 import { Disclaimer } from '../../components/Disclaimer';
-import { Button, Chips, FormError, FormScreen, Input, MoneyInput, trySave } from '../../components/form';
+import { Button, Chips, FormError, FormScreen, Input, MoneyInput } from '../../components/form';
 import { useForm } from '../../components/useForm';
 import { Card, Money } from '../../components/ui';
 import { shortMonth } from '../../lib/dateInput';
