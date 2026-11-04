@@ -46,7 +46,7 @@ function band(ratio: number, params: Parameter[], today: string): { label: strin
 }
 
 export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackParamList, 'PlanoHome'>) {
-  const { db, profile, today } = useReadyData();
+  const { db, profile, bridges, today } = useReadyData();
   const month = monthOf(today);
   const empty = isEmptyProfile(profile);
   const score = healthScore(profile, today);
@@ -132,6 +132,25 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
           );
         })}
         <Button title="+ Meta" accessibilityLabel="Adicionar meta" kind="secondary" onPress={() => navigation.navigate('GoalForm')} />
+      </Card>
+
+      <Card>
+        <Text style={styles.label} accessibilityRole="header">
+          Crédito ponte
+        </Text>
+        <Text style={styles.body}>Se o saldo ficar abaixo da reserva mínima, as simulações mostram como cada opção cobriria a falta. Nada aqui é oferta de crédito.</Text>
+        {bridges.map((b) => (
+          <Pressable key={b.id} style={styles.paramRow} onPress={() => navigation.navigate('BridgeForm', { id: b.id })} accessibilityRole="button" accessibilityHint="Editar opção">
+            <Text style={styles.paramLabel}>
+              {b.name}
+              {b.kind === 'meta' ? ' (meta, não oferta)' : ''}
+            </Text>
+            <Text style={styles.paramValue}>
+              {b.kind === 'parcelar_fatura' ? 'premissas' : `${(b.monthlyRate * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% a.m.`} · {b.months}x
+            </Text>
+          </Pressable>
+        ))}
+        <Button title="+ Opção" accessibilityLabel="Adicionar opção de crédito ponte" kind="secondary" onPress={() => navigation.navigate('BridgeForm')} />
       </Card>
 
       {!empty && (
