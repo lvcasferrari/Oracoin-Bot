@@ -26,7 +26,14 @@ export interface MonthRow {
 export function monthlySummary(profile: Profile, today: string): MonthRow[] {
   const first = monthOf(today);
   const months = param(profile.parameters, 'projection_months', today);
-  const events = buildEvents(profile, today);
+  // Each month's events are computed once and shared by the projection and the rows.
+  const cache = new Map<string, CashEvent[]>();
+  const eventsOf = (month: string) => {
+    let list = cache.get(month);
+    if (!list) cache.set(month, (list = monthEvents(profile, month, today)));
+    return list;
+  };
+  const events = buildEvents(profile, today, eventsOf);
   const points = cashProjection(profileBalance(profile), events);
 
   let running = profileBalance(profile);
@@ -43,7 +50,7 @@ export function monthlySummary(profile: Profile, today: string): MonthRow[] {
       index++;
     }
     if (low === Infinity) low = running;
-    const all = monthEvents(profile, month, today);
+    const all = eventsOf(month);
     const sum = (source: CashEvent['source']) => cents(-all.filter((e) => e.source === source && e.amount < 0).reduce((s, e) => s + e.amount, 0));
     const income = cents(all.reduce((s, e) => (e.amount > 0 ? s + e.amount : s), 0));
     const outflows = sum('entry');

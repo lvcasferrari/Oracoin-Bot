@@ -59,8 +59,17 @@ export function sacSchedule(principal: number, rate: number, months: number): Sc
   return roundSchedule(exact, principal);
 }
 
-export const debtSchedule = (debt: Debt): ScheduleRow[] =>
-  (debt.system === 'price' ? priceSchedule : sacSchedule)(debt.principal, debt.monthlyRate, debt.months);
+// Debts are never mutated (changes copy them), so the object is a safe key. Callers must not mutate the rows.
+const schedules = new WeakMap<Debt, ScheduleRow[]>();
+
+export function debtSchedule(debt: Debt): ScheduleRow[] {
+  let rows = schedules.get(debt);
+  if (!rows) {
+    rows = (debt.system === 'price' ? priceSchedule : sacSchedule)(debt.principal, debt.monthlyRate, debt.months);
+    schedules.set(debt, rows);
+  }
+  return rows;
+}
 
 export interface DebtSummary {
   totalPaid: number;

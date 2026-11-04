@@ -56,6 +56,6 @@ export const DEFAULT_PARAMETERS: Parameter[] = [
   { key: 'variable_estimate_uncertainty', value: 0.2, effectiveFrom: SET, source: 'suposição do app' },
   { key: 'purchase_on_closing_day_next_invoice', value: 1, effectiveFrom: SET, source: 'sem fonte citável; editável (0 ou 1)' },
   { key: 'best_day_max_wait_days', value: 7, effectiveFrom: '2026-10-27', source: APP },
-  { key: 'reserva_minima_months', value: 1, effectiveFrom: '2026-11-04', source: `${APP} (meses de despesas essenciais)` },
-  { key: 'rendimento_caixa_mensal', value: 0.009, effectiveFrom: '2026-11-04', source: 'suposição do app; troque pelo rendimento da sua conta' },
+  { key: 'reserva_minima_months', value: 1, effectiveFrom: SET, source: `${APP} (meses de despesas essenciais)` },
+  { key: 'rendimento_caixa_mensal', value: 0.009, effectiveFrom: SET, source: 'suposição do app; troque pelo rendimento da sua conta' },
 ];

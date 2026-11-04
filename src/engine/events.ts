@@ -108,13 +108,13 @@ export function monthEvents(profile: Profile, month: string, today: string): Cas
  * `balanceDate` are already part of the informed balance. Same-day outflows come first, so
  * the critical day is conservative.
  */
-export function buildEvents(profile: Profile, today: string): CashEvent[] {
+export function buildEvents(profile: Profile, today: string, eventsOf = (month: string) => monthEvents(profile, month, today)): CashEvent[] {
   const months = param(profile.parameters, 'projection_months', today);
   const start = monthOf(profile.balanceDate);
   const end = addMonths(monthOf(today), months - 1);
   const events: CashEvent[] = [];
   for (let m = start; m <= end; m = addMonths(m, 1)) {
-    events.push(...monthEvents(profile, m, today));
+    events.push(...eventsOf(m));
   }
   return events
     .filter((e) => e.date > profile.balanceDate)
