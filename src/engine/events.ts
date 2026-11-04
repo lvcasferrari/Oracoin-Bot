@@ -89,6 +89,8 @@ export function monthEvents(profile: Profile, month: string, today: string): Cas
   for (const debt of profile.debts) {
     const k = monthDiff(debt.startMonth, month) + 1;
     if (k < 1 || k > debt.months) continue;
+    // A paid-off debt stops projecting instalments from its payoff month on.
+    if (debt.paidOffMonth !== undefined && month >= debt.paidOffMonth) continue;
     events.push({
       date: dateInMonth(month, debt.dueDay),
       amount: -debtPayment(debt, k),

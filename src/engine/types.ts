@@ -116,6 +116,8 @@ export interface Debt {
   /** Month of the next payment. */
   startMonth: string;
   dueDay: number;
+  /** Month the debt was (or would be) paid off; no instalments from then on. */
+  paidOffMonth?: string;
 }
 
 export interface Goal {
@@ -135,7 +137,8 @@ export type ScenarioChange =
   | { type: 'incomeChange'; deltaPct?: number; deltaAmount?: number; months: number; startMonth: string }
   | { type: 'costChange'; name?: string; amount: number; category?: Category; startMonth: string }
   | { type: 'emergency'; amount: number; date: string }
-  | { type: 'payPartial'; cardId: string; dueMonth: string; payNow: number; months: number };
+  | { type: 'payPartial'; cardId: string; dueMonth: string; payNow: number; months: number }
+  | { type: 'payoff'; debtId: string; month: string; amount: number };
 
 export interface Scenario {
   id: string;

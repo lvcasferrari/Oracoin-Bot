@@ -101,6 +101,14 @@ export function applyChanges(profile: Profile, changes: ScenarioChange[], today:
         p.entries.push({ id: makeId('entry'), kind: 'out', name: 'Imprevisto', amount: c.amount, day: Number(date.slice(8)), recurrence: 'once', startMonth: monthOf(date), date });
         break;
       }
+      case 'payoff': {
+        const debt = p.debts.find((d) => d.id === c.debtId);
+        if (!debt) throw new Error(`Unknown debt ${c.debtId}`);
+        const date = monthOf(free) >= c.month ? free : dateInMonth(c.month, 1);
+        p.debts = p.debts.map((d) => (d.id === debt.id ? { ...d, paidOffMonth: monthOf(date) } : d));
+        p.entries.push({ id: makeId('entry'), kind: 'out', name: `Quitação: ${debt.name}`, amount: c.amount, day: Number(date.slice(8)), recurrence: 'once', startMonth: monthOf(date), date });
+        break;
+      }
       case 'payPartial': {
         const card = p.cards.find((x) => x.id === c.cardId);
         if (!card) throw new Error(`Unknown card ${c.cardId}`);

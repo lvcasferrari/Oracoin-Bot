@@ -13,4 +13,5 @@ export * from './goals';
 export * from './score';
 export * from './scenarios';
 export * from './actions';
+export * from './quitacao';
 export * from './simulator';
