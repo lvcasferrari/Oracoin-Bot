@@ -1,5 +1,5 @@
 // Pure: form text → engine entities, with calm pt-BR messages. No react-native imports (tested in Vitest).
-import { dateInMonth, monthOf, type Account, type Card, type Category, type Debt, type Entry, type Goal, type Installment, type Profile } from '../../engine';
+import { dateInMonth, effectiveLoanRate, monthOf, type Account, type Bridge, type Card, type Category, type Debt, type Entry, type Goal, type Installment, type Profile } from '../../engine';
 import { parseDateBR, parseDay, parseMonthBR } from '../../lib/dateInput';
 import { parseBRL } from '../../lib/money';
 
@@ -108,6 +108,8 @@ export function entryFromDraft(d: EntryDraft): Result<Entry> {
 export interface DebtDraft {
   id: string; name: string; kind: Debt['kind']; principal: string; ratePct: string; months: string;
   system: Debt['system']; startMonth: string; dueDay: string;
+  /** Payoff quote: none, an amount to settle, or an annual discount rate. */
+  payoffable: 'sim' | 'nao'; quoteKind: 'none' | 'valor' | 'desconto'; payoffAmount: string; discountPct: string; quotedOn: string;
 }
 
 export function debtFromDraft(d: DebtDraft): Result<Debt> {
@@ -121,6 +123,18 @@ export function debtFromDraft(d: DebtDraft): Result<Debt> {
   const startMonth = parseMonthBR(d.startMonth);
   if (!startMonth) errors.startMonth = MSG.month;
   const dueDay = day(errors, 'dueDay', d.dueDay);
+  const payoffAmount = d.quoteKind === 'valor' ? money(errors, 'payoffAmount', d.payoffAmount, { required: true, positive: true }) : undefined;
+  let discount: number | undefined;
+  if (d.quoteKind === 'desconto') {
+    const pct = d.discountPct.trim() === '' ? null : parseBRL(d.discountPct);
+    if (pct === null || pct <= 0 || pct > 100) errors.discountPct = 'Use uma taxa entre 0 e 100% ao ano.';
+    else discount = Math.round(pct * 1e4) / 1e6;
+  }
+  let quotedOn: string | undefined;
+  if (d.quoteKind !== 'none' && d.quotedOn.trim()) {
+    quotedOn = parseDateBR(d.quotedOn) ?? undefined;
+    if (!quotedOn) errors.quotedOn = MSG.date;
+  }
   return done(errors, () => ({
     id: d.id,
     name: d.name.trim(),
@@ -131,6 +145,43 @@ export function debtFromDraft(d: DebtDraft): Result<Debt> {
     system: d.system,
     startMonth: startMonth as string,
     dueDay: dueDay as number,
+    // Explicit undefined clears a removed quote when merged over the stored debt.
+    payoffAmount,
+    payoffDiscountAnnual: discount,
+    payoffQuotedOn: quotedOn,
+    payoffable: d.payoffable === 'nao' ? false : undefined,
+  }));
+}
+
+export interface BridgeDraft {
+  id: string; name: string; kind: Bridge['kind']; ratePct: string; months: string; source: string; effectiveFrom: string;
+  /** Optional, for a loan: what lands in the account (after IOF and fees) and the installment; gives the true rate. */
+  netReceived: string; installment: string;
+}
+
+/** A bridge option. "Parcelar fatura" uses the app's premissas, so its rate is `invoiceRate`. */
+export function bridgeFromDraft(d: BridgeDraft, invoiceRate: number): Result<Bridge> {
+  const errors: Record<string, string> = {};
+  if (!d.name.trim()) errors.name = MSG.required;
+  const months = /^\s*\d+\s*$/.test(d.months) ? Number(d.months) : NaN;
+  if (!(months >= 1 && months <= 120)) errors.months = 'Use um número de 1 a 120.';
+  let rate = invoiceRate;
+  if (d.kind !== 'parcelar_fatura') {
+    const net = money(errors, 'netReceived', d.netReceived, { positive: true });
+    const pmt = money(errors, 'installment', d.installment, { positive: true });
+    if (net !== undefined && pmt !== undefined && months >= 1) {
+      const r = effectiveLoanRate(net, pmt, months).monthly;
+      if (r === null || r < 0 || r > 1) errors.installment = 'Com esse valor e essa parcela a taxa não fecha. Confira os números.';
+      else rate = r;
+    } else {
+      const pct = d.ratePct.trim() === '' ? null : parseBRL(d.ratePct);
+      if (pct === null || pct < 0 || pct > 100) errors.ratePct = MSG.rate;
+      else rate = pct / 100;
+    }
+  }
+  return done(errors, () => ({
+    id: d.id, name: d.name.trim(), kind: d.kind, monthlyRate: Math.round(rate * 1e6) / 1e6, months,
+    effectiveFrom: d.effectiveFrom, source: d.source.trim() || 'informado por você',
   }));
 }
 

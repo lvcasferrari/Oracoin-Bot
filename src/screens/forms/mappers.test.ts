@@ -4,6 +4,7 @@ import {
   accountFromDraft,
   cardDeletionImpact,
   cardFromDraft,
+  bridgeFromDraft,
   debtFromDraft,
   entryFromDraft,
   goalFromDraft,
@@ -15,6 +16,8 @@ import {
 
 const card: CardDraft = { id: 'c', bank: 'Nubank', name: '', closingDay: '5', dueDay: '12', limit: '8.000', variableEstimate: '800', availableInformed: '' };
 const entry: EntryDraft = { id: 'e', kind: 'out', name: 'Aluguel', amount: '2.000', recurrence: 'monthly', day: '10', startMonth: '11/2026', endMonth: '', date: '' };
+
+const noQuote = { payoffable: 'sim' as const, quoteKind: 'none' as const, payoffAmount: '', discountPct: '', quotedOn: '' };
 
 describe('form mappers', () => {
   it('builds a card, naming it after the bank when the name is empty', () => {
@@ -49,11 +52,32 @@ describe('form mappers', () => {
     expect(!r.ok && r.errors.amount).toBe(MSG.positive);
   });
   it('builds a debt with the rate as a fraction', () => {
-    const r = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '1,49', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15' });
+    const r = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '1,49', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote });
     expect(r).toEqual({ ok: true, value: expect.objectContaining({ principal: 12000, monthlyRate: 0.0149, months: 24, startMonth: '2026-12' }) });
   });
+  it('reads a payoff quote (amount or discount, never both) and clears it when removed', () => {
+    const base = { id: 'd', name: 'Carro', kind: 'financiamento' as const, principal: '12.000', ratePct: '1,49', months: '24', system: 'price' as const, startMonth: '12/2026', dueDay: '15' };
+    const valor = debtFromDraft({ ...base, ...noQuote, quoteKind: 'valor', payoffAmount: '9.800,00', quotedOn: '04/11/2026' });
+    expect(valor.ok && valor.value).toMatchObject({ payoffAmount: 9800, payoffDiscountAnnual: undefined, payoffQuotedOn: '2026-11-04' });
+    const desc = debtFromDraft({ ...base, ...noQuote, quoteKind: 'desconto', discountPct: '5,5', payoffAmount: '9.800,00' });
+    expect(desc.ok && desc.value).toMatchObject({ payoffDiscountAnnual: 0.055, payoffAmount: undefined });
+    const none = debtFromDraft({ ...base, ...noQuote, payoffable: 'nao' });
+    expect(none.ok && { ...{ payoffAmount: 1 }, ...none.value }).toMatchObject({ payoffAmount: undefined, payoffable: false });
+    const bad = debtFromDraft({ ...base, ...noQuote, quoteKind: 'desconto', discountPct: '0', quotedOn: '31/02' });
+    expect(!bad.ok && Object.keys(bad.errors).sort()).toEqual(['discountPct', 'quotedOn']);
+  });
+  it('reads a bridge: typed rate, true rate from net amount and installment, invoice split from premissas', () => {
+    const base = { id: 'b', name: 'Banco', kind: 'emprestimo' as const, ratePct: '2,5', months: '12', source: '', effectiveFrom: '2026-11-04', netReceived: '', installment: '' };
+    const typed = bridgeFromDraft(base, 0.09);
+    expect(typed.ok && typed.value).toMatchObject({ monthlyRate: 0.025, source: 'informado por você' });
+    const real = bridgeFromDraft({ ...base, ratePct: '', netReceived: '9.500', installment: '945,60' }, 0.09);
+    expect(real.ok && real.value.monthlyRate).toBeGreaterThan(0.02);
+    expect(bridgeFromDraft({ ...base, kind: 'parcelar_fatura', ratePct: '' }, 0.0934)).toMatchObject({ ok: true, value: { monthlyRate: 0.0934 } });
+    const bad = bridgeFromDraft({ ...base, name: ' ', ratePct: '', months: '0' }, 0.09);
+    expect(!bad.ok && Object.keys(bad.errors).sort()).toEqual(['months', 'name', 'ratePct']);
+  });
   it('rejects impossible debt terms', () => {
-    const r = debtFromDraft({ id: 'd', name: 'X', kind: 'emprestimo', principal: '1', ratePct: '150', months: '0', system: 'sac', startMonth: '1/2027', dueDay: '40' });
+    const r = debtFromDraft({ id: 'd', name: 'X', kind: 'emprestimo', principal: '1', ratePct: '150', months: '0', system: 'sac', startMonth: '1/2027', dueDay: '40', ...noQuote });
     expect(!r.ok && Object.keys(r.errors).sort()).toEqual(['dueDay', 'months', 'ratePct']);
   });
   it('turns the month grid into installments, skipping empty and zero months', () => {

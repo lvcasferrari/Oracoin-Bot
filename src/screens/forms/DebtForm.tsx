@@ -3,10 +3,10 @@ import { StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { addMonths, debtSchedule, debtSummary, monthOf, type Debt } from '../../engine';
 import { removeDebt, saveDebt } from '../../db/repos';
-import { Button, Chips, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, MonthInput, trySave } from '../../components/form';
+import { Button, Chips, DateInput, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, MonthInput, trySave } from '../../components/form';
 import { Money } from '../../components/ui';
 import { useForm } from '../../components/useForm';
-import { formatMonthBR } from '../../lib/dateInput';
+import { formatDateBR, formatMonthBR } from '../../lib/dateInput';
 import { newId } from '../../lib/id';
 import { toInput } from '../../lib/money';
 import type { BancosStackParamList } from '../../navigation/types';
@@ -18,6 +18,15 @@ const KINDS = [
   { value: 'emprestimo' as const, label: 'Empréstimo' },
   { value: 'hipoteca' as const, label: 'Imóvel' },
   { value: 'pix_credito' as const, label: 'Pix no crédito' },
+];
+const PAYOFFABLE = [
+  { value: 'sim' as const, label: 'Sim' },
+  { value: 'nao' as const, label: 'Não' },
+];
+const QUOTES = [
+  { value: 'none' as const, label: 'Ainda não' },
+  { value: 'valor' as const, label: 'Valor para quitar' },
+  { value: 'desconto' as const, label: 'Desconto ao ano' },
 ];
 const SYSTEMS = [
   { value: 'price' as const, label: 'Parcela fixa (Price)' },
@@ -36,6 +45,11 @@ export function DebtForm({ initial, today, onSubmit }: { initial?: Debt; today: 
       system: initial?.system ?? 'price',
       startMonth: formatMonthBR(initial?.startMonth ?? addMonths(monthOf(today), 1)),
       dueDay: initial ? String(initial.dueDay) : '',
+      payoffable: initial?.payoffable === false ? 'nao' : 'sim',
+      quoteKind: initial?.payoffAmount !== undefined ? 'valor' : initial?.payoffDiscountAnnual !== undefined ? 'desconto' : 'none',
+      payoffAmount: toInput(initial?.payoffAmount),
+      discountPct: initial?.payoffDiscountAnnual !== undefined ? toInput(Math.round(initial.payoffDiscountAnnual * 1e6) / 1e4) : '',
+      quotedOn: initial?.payoffQuotedOn ? formatDateBR(initial.payoffQuotedOn) : '',
     }),
     debtFromDraft,
   );
@@ -52,6 +66,19 @@ export function DebtForm({ initial, today, onSubmit }: { initial?: Debt; today: 
       <Chips label="Sistema" options={SYSTEMS} value={f.draft.system} onChange={f.set('system')} />
       <MonthInput label="Mês da próxima parcela" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
       <DayInput label="Vence dia" value={f.draft.dueDay} onChangeText={f.set('dueDay')} error={f.errors.dueDay} />
+      <Chips label="O contrato deixa quitar antes?" options={PAYOFFABLE} value={f.draft.payoffable} onChange={f.set('payoffable')} />
+      {f.draft.payoffable === 'sim' && (
+        <>
+          <Chips label="O credor já informou quanto custa quitar?" options={QUOTES} value={f.draft.quoteKind} onChange={f.set('quoteKind')} />
+          {f.draft.quoteKind === 'valor' && (
+            <MoneyInput label="Valor para quitar hoje" value={f.draft.payoffAmount} onChangeText={f.set('payoffAmount')} error={f.errors.payoffAmount} hint="O valor do boleto de quitação, no app do banco." />
+          )}
+          {f.draft.quoteKind === 'desconto' && (
+            <Input label="Desconto ao ano (%)" keyboardType="decimal-pad" placeholder="Ex.: 5,5" value={f.draft.discountPct} onChangeText={f.set('discountPct')} error={f.errors.discountPct} hint="A taxa usada para descontar as parcelas que faltam." />
+          )}
+          {f.draft.quoteKind !== 'none' && <DateInput label="Cotado em (opcional)" value={f.draft.quotedOn} onChangeText={f.set('quotedOn')} error={f.errors.quotedOn} />}
+        </>
+      )}
       {summary && (
         <Text style={styles.preview}>
           Próxima parcela: <Money value={summary.firstPayment} />. Juros até o fim: <Money value={summary.totalInterest} /> (estimado).

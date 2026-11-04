@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
-import { todayLocal, type Profile } from '../engine';
+import { todayLocal, type Bridge, type Profile } from '../engine';
 import type { SqlDriver } from '../db/driver';
 import { loadProfile } from '../db/loadProfile';
 import { openDb } from '../db/open';
+import { listBridges } from '../db/repos/bridges';
 import { getProfileMeta, type ProfileMeta } from '../db/repos/profileMeta';
 import { logError } from '../lib/log';
 
@@ -14,6 +15,8 @@ interface AppDataValue {
   db: SqlDriver | null;
   profile: Profile | null;
   meta: ProfileMeta | null;
+  /** Bridge credit options the user informed (kept outside the profile). */
+  bridges: Bridge[];
   today: string;
   /** Reloads the profile after a write. */
   refresh: () => Promise<void>;
@@ -28,6 +31,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [db, setDb] = useState<SqlDriver | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [meta, setMeta] = useState<ProfileMeta | null>(null);
+  const [bridges, setBridges] = useState<Bridge[]>([]);
   const [today, setToday] = useState(todayLocal());
   const [attempt, setAttempt] = useState(0);
 
@@ -37,10 +41,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       const opened = await openDb();
       const loaded = await loadProfile(opened);
       const loadedMeta = await getProfileMeta(opened);
+      const loadedBridges = await listBridges(opened);
       if (!alive) return;
       setDb(opened);
       setProfile(loaded);
       setMeta(loadedMeta);
+      setBridges(loadedBridges);
       setStatus('ready');
     })().catch((error: unknown) => {
       logError('[AppData] could not open the database', error);
@@ -63,6 +69,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     if (!db) return;
     setProfile(await loadProfile(db));
     setMeta(await getProfileMeta(db));
+    setBridges(await listBridges(db));
   }, [db]);
 
   // The loading state is set here, not inside the effect (no cascading render).
@@ -71,7 +78,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setAttempt((n) => n + 1);
   }, []);
 
-  const value = useMemo(() => ({ status, db, profile, meta, today, refresh, retry }), [status, db, profile, meta, today, refresh, retry]);
+  const value = useMemo(() => ({ status, db, profile, meta, bridges, today, refresh, retry }), [status, db, profile, meta, bridges, today, refresh, retry]);
   return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 }
 
@@ -83,9 +90,9 @@ export function useAppData(): AppDataValue {
 
 /** For screens rendered behind DataGate, where the data is always loaded. */
 export function useReadyData() {
-  const { status, db, profile, meta, today, refresh } = useAppData();
+  const { status, db, profile, meta, bridges, today, refresh } = useAppData();
   if (status !== 'ready' || !db || !profile || !meta) throw new Error('useReadyData used before the data was ready');
-  return { db, profile, meta, today, refresh };
+  return { db, profile, meta, bridges, today, refresh };
 }
 
 export const isEmptyProfile = (p: Profile): boolean => p.entries.length === 0 && p.cards.length === 0 && p.accounts.length === 0;
