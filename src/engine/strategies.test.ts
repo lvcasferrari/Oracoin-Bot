@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exploreStrategies } from './strategies';
+import { debtViews, exploreStrategies, realizeStrategy } from './strategies';
 import { makeProfile, TODAY } from './testing';
 import type { Bridge, Debt, Entry, Profile } from './types';
 
@@ -52,5 +52,25 @@ describe('exploreStrategies', () => {
   it('skips debts that cannot be paid off early', () => {
     const p = { ...tight(), debts: [{ ...debt('a', 0.05), payoffable: false }] };
     expect(exploreStrategies(p, [], TODAY, { top: 1000 }).every((s) => s.payoffs.length === 0)).toBe(true);
+  });
+  it('rebuilds a chosen strategy with real ids', () => {
+    const [best] = exploreStrategies(tight(), bridges, TODAY);
+    let n = 0;
+    const after = realizeStrategy(tight(), best, TODAY, (prefix) => `${prefix}-real${++n}`);
+    expect(after.debts.length).toBe(best.after.debts.length);
+    expect(after.entries.filter((e) => e.id.includes('-s')).length).toBe(0);
+  });
+});
+
+describe('debtViews', () => {
+  it('reads each debt against the informed credit and the cash yield, most expensive first', () => {
+    const p = { ...makeProfile({ debts: [debt('cara', 0.06, 1000), debt('barata', 0.005, 1000), { ...debt('casa', 0.01), payoffable: false }] }), accounts: [{ id: 'c', bank: 'X', kind: 'corrente' as const, balance: 50000 }] };
+    const views = debtViews(p, [bridge('banco', 'emprestimo', 0.04), bridge('meta', 'meta', 0.001)], TODAY);
+    expect(views.map((v) => [v.debt.id, v.reading])).toEqual([
+      ['cara', 'custa_mais_que_credito'],
+      ['barata', 'deixar_correr'],
+      ['casa', null],
+    ]);
+    expect(views[2].payoffAmount).toBeNull();
   });
 });

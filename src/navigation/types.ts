@@ -49,5 +49,8 @@ export type PlanoStackParamList = {
   GoalForm: { id?: string } | undefined;
   ParameterForm: { key: ParamKey };
   BridgeForm: { id?: string } | undefined;
+  Quitacao: undefined;
+  Estrategias: undefined;
+  Roteiro: { preview?: boolean } | undefined;
   Import: undefined;
 };
