@@ -80,9 +80,28 @@ ALTER TABLE invoices ADD COLUMN paid_on TEXT;
 INSERT INTO parameters (key, effective_from, value, source) VALUES ('best_day_max_wait_days', '2026-10-27', 7, 'referência do app');
 `;
 
+// v3 (plano de quitação): payoff quotes on debts, bridge credit options, a payment log, two parameters.
+const V3 = `
+ALTER TABLE debts ADD COLUMN paid_off_month TEXT;
+ALTER TABLE debts ADD COLUMN payoff_amount_cents INTEGER;
+ALTER TABLE debts ADD COLUMN payoff_discount_annual REAL CHECK (payoff_discount_annual IS NULL OR payoff_amount_cents IS NULL);
+ALTER TABLE debts ADD COLUMN payoff_quoted_on TEXT;
+ALTER TABLE debts ADD COLUMN payoffable INTEGER NOT NULL DEFAULT 1 CHECK (payoffable IN (0, 1));
+CREATE TABLE bridges (id TEXT PRIMARY KEY, name TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('emprestimo','meta','parcelar_fatura')),
+  monthly_rate REAL NOT NULL CHECK (monthly_rate >= 0), months INTEGER NOT NULL CHECK (months >= 1),
+  effective_from TEXT NOT NULL, source TEXT NOT NULL);
+CREATE TABLE payments (id TEXT PRIMARY KEY, ref_type TEXT NOT NULL CHECK (ref_type IN ('debt','invoice','bridge')),
+  ref_id TEXT NOT NULL, month TEXT NOT NULL, paid_on TEXT NOT NULL, amount_cents INTEGER NOT NULL);
+INSERT INTO parameters (key, effective_from, value, source) VALUES
+  ('reserva_minima_months', '2026-11-04', 1, 'referência do app (meses de despesas essenciais)'),
+  ('rendimento_caixa_mensal', '2026-11-04', 0.009, 'suposição do app; troque pelo rendimento da sua conta');
+`;
+
 export const MIGRATIONS: Migration[] = [
   { version: 1, sql: V1 },
   { version: 2, sql: V2 },
+  { version: 3, sql: V3 },
 ];
 
 /** Applies the missing migrations, each with its `user_version` bump in one transaction. */

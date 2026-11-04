@@ -1,6 +1,6 @@
 // Money is INTEGER cents in SQLite and reais in the engine; this is the only place that converts.
 // Exception: scenarios.changes_json keeps the engine's reais, because it is only read back by the engine.
-import type { Account, Card, Debt, Entry, Goal, Installment, Invoice, Parameter, Scenario } from '../engine';
+import type { Account, Bridge, Card, Debt, Entry, Goal, Installment, Invoice, Parameter, Scenario } from '../engine';
 import type { SqlParam } from './driver';
 
 export function toCents(reais: number): number {
@@ -67,15 +67,31 @@ export const invoiceToParams = (i: Invoice): SqlParam[] => [
 
 export interface DebtRow {
   id: string; name: string; kind: Debt['kind']; principal_cents: number; monthly_rate: number; months: number;
-  system: Debt['system']; start_month: string; due_day: number;
+  system: Debt['system']; start_month: string; due_day: number; paid_off_month: string | null;
+  payoff_amount_cents: number | null; payoff_discount_annual: number | null; payoff_quoted_on: string | null; payoffable: number;
 }
 export const debtFromRow = (r: DebtRow): Debt => ({
   id: r.id, name: r.name, kind: r.kind, principal: fromCents(r.principal_cents), monthlyRate: r.monthly_rate, months: r.months,
-  system: r.system, startMonth: r.start_month, dueDay: r.due_day,
+  system: r.system, startMonth: r.start_month, dueDay: r.due_day, paidOffMonth: opt(r.paid_off_month),
+  payoffAmount: fromCentsOpt(r.payoff_amount_cents), payoffDiscountAnnual: opt(r.payoff_discount_annual),
+  payoffQuotedOn: opt(r.payoff_quoted_on), payoffable: r.payoffable === 1 ? undefined : false,
 });
 export const debtToParams = (d: Debt): SqlParam[] => {
   if (!Number.isFinite(d.monthlyRate) || d.monthlyRate < 0) throw new RangeError('Invalid rate');
-  return [d.id, d.name, d.kind, toCents(d.principal), d.monthlyRate, d.months, d.system, d.startMonth, d.dueDay];
+  if (d.payoffDiscountAnnual !== undefined && !Number.isFinite(d.payoffDiscountAnnual)) throw new RangeError('Invalid rate');
+  return [
+    d.id, d.name, d.kind, toCents(d.principal), d.monthlyRate, d.months, d.system, d.startMonth, d.dueDay, orNull(d.paidOffMonth),
+    centsOrNull(d.payoffAmount), orNull(d.payoffDiscountAnnual), orNull(d.payoffQuotedOn), d.payoffable === false ? 0 : 1,
+  ];
+};
+
+export interface BridgeRow { id: string; name: string; kind: Bridge['kind']; monthly_rate: number; months: number; effective_from: string; source: string }
+export const bridgeFromRow = (r: BridgeRow): Bridge => ({
+  id: r.id, name: r.name, kind: r.kind, monthlyRate: r.monthly_rate, months: r.months, effectiveFrom: r.effective_from, source: r.source,
+});
+export const bridgeToParams = (b: Bridge): SqlParam[] => {
+  if (!Number.isFinite(b.monthlyRate) || b.monthlyRate < 0) throw new RangeError('Invalid rate');
+  return [b.id, b.name, b.kind, b.monthlyRate, b.months, b.effectiveFrom, b.source];
 };
 
 export interface GoalRow { id: string; name: string; target_cents: number; saved_cents: number; deadline: string | null; priority: number }

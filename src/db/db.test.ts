@@ -5,7 +5,7 @@ import { loadProfile, saveProfile } from './loadProfile';
 import { toCents } from './mappers';
 import { migrate, MIGRATIONS, type Migration } from './migrations';
 import { nodeDriver } from './nodeDriver';
-import { commitScenario, listInvoices, listParameters, replaceCardInstallments, restoreParameterDefault, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
+import { commitScenario, listBridges, listDebts, listInvoices, removeBridge, saveBridge, saveDebt, listParameters, replaceCardInstallments, restoreParameterDefault, saveCard, saveEntry, saveInvoice, saveParameter, USER_SOURCE } from './repos';
 import { resetAll } from './reset';
 
 const fresh = async () => {
@@ -217,6 +217,32 @@ describe('resetAll', () => {
     const p = await loadProfile(db);
     expect(p.balanceDate).toBe('2026-12-02');
     expect(p.cards).toEqual([]);
+  });
+});
+
+describe('plano de quitação (v3)', () => {
+  const debt = fullProfile.debts[0];
+  it('round-trips payoff quotes and the payoffable flag', async () => {
+    const db = await fresh();
+    const quoted = { ...debt, paidOffMonth: '2027-03', payoffAmount: 9876.54, payoffQuotedOn: '2026-11-04', payoffable: false };
+    await saveDebt(db, quoted);
+    expect(await listDebts(db)).toEqual([quoted]);
+    await saveDebt(db, debt);
+    expect(await listDebts(db)).toEqual([debt]);
+  });
+  it('refuses a quote with both an amount and a discount rate', async () => {
+    const db = await fresh();
+    await expect(saveDebt(db, { ...debt, payoffAmount: 100, payoffDiscountAnnual: 0.05 })).rejects.toThrow();
+  });
+  it('saves, lists cheapest first and removes bridges', async () => {
+    const db = await fresh();
+    const base = { months: 12, effectiveFrom: '2026-11-04', source: 'informado' };
+    await saveBridge(db, { ...base, id: 'b1', name: 'Banco', kind: 'emprestimo', monthlyRate: 0.03 });
+    await saveBridge(db, { ...base, id: 'b2', name: 'Meta', kind: 'meta', monthlyRate: 0.015 });
+    expect((await listBridges(db)).map((b) => b.id)).toEqual(['b2', 'b1']);
+    await expect(saveBridge(db, { ...base, id: 'b3', name: 'X', kind: 'emprestimo', monthlyRate: 0.02, months: 0 })).rejects.toThrow();
+    await removeBridge(db, 'b1');
+    expect(await listBridges(db)).toHaveLength(1);
   });
 });
 
