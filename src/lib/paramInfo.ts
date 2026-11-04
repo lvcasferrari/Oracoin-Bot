@@ -39,6 +39,8 @@ export const PARAM_INFO: Record<ParamKey, Info> = {
   rotativo_lookback_months: { label: 'Meses em que um pagamento parcial pesa na nota', unit: 'months', min: 0, max: 24, group: SCORE },
   variable_estimate_uncertainty: { label: 'Incerteza do gasto variável do cartão', unit: 'pct', min: 0, max: 100, group: PROJ },
   purchase_on_closing_day_next_invoice: { label: 'Compra no dia do fechamento entra na fatura seguinte', unit: 'bool', min: 0, max: 1, group: PROJ },
+  reserva_minima_months: { label: 'Reserva mínima no caixa (meses de despesas essenciais)', unit: 'months', min: 0, max: 24, group: PROJ },
+  rendimento_caixa_mensal: { label: 'Rendimento do dinheiro parado na conta', unit: 'pctMonth', min: 0, max: 10, group: RATES },
   best_day_max_wait_days: { label: 'Espera máxima para sugerir o melhor dia de compra (dias)', unit: 'weight', min: 0, max: 31, group: PROJ },
 };
 

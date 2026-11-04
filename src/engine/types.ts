@@ -24,6 +24,8 @@ export const PARAM_KEYS = [
   'variable_estimate_uncertainty',
   'purchase_on_closing_day_next_invoice',
   'best_day_max_wait_days',
+  'reserva_minima_months',
+  'rendimento_caixa_mensal',
 ] as const;
 
 export type ParamKey = (typeof PARAM_KEYS)[number];
@@ -118,6 +120,12 @@ export interface Debt {
   dueDay: number;
   /** Month the debt was (or would be) paid off; no instalments from then on. */
   paidOffMonth?: string;
+  /** Payoff quote from the creditor: an amount to settle, or an annual discount rate (never both). */
+  payoffAmount?: number;
+  payoffDiscountAnnual?: number;
+  payoffQuotedOn?: string;
+  /** false = the contract does not allow early payoff (e.g. a mortgage the user keeps); default true. */
+  payoffable?: boolean;
 }
 
 export interface Goal {

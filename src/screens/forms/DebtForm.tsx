@@ -75,7 +75,8 @@ export function DebtFormScreen({ route, navigation }: NativeStackScreenProps<Ban
         initial={initial}
         today={today}
         onSubmit={async (debt) => {
-          await saveDebt(db, debt);
+          // Keep fields this form does not edit (payoff quote, paid-off month).
+          await saveDebt(db, { ...initial, ...debt });
           await refresh();
           navigation.goBack();
         }}
