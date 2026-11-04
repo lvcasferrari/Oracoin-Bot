@@ -136,6 +136,18 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
 
       <Card>
         <Text style={styles.label} accessibilityRole="header">
+          Quitação de dívidas
+        </Text>
+        <Text style={styles.body}>
+          {profile.debts.length === 0
+            ? 'Quando houver dívidas cadastradas, veja quanto rende quitar cada uma e compare estratégias.'
+            : 'Quanto rende quitar cada dívida agora e quais combinações deixam o custo mensal menor, com os números que você informou.'}
+        </Text>
+        <Button title="Ver quitação" kind="secondary" onPress={() => navigation.navigate('Quitacao')} />
+      </Card>
+
+      <Card>
+        <Text style={styles.label} accessibilityRole="header">
           Crédito ponte
         </Text>
         <Text style={styles.body}>Se o saldo ficar abaixo da reserva mínima, as simulações mostram como cada opção cobriria a falta. Nada aqui é oferta de crédito.</Text>
