@@ -140,6 +140,18 @@ export type ScenarioChange =
   | { type: 'payPartial'; cardId: string; dueMonth: string; payNow: number; months: number }
   | { type: 'payoff'; debtId: string; month: string; amount: number };
 
+/** A way to cover a cash shortfall (crédito ponte), dated and with a source like a parameter. */
+export interface Bridge {
+  id: string;
+  name: string;
+  /** 'meta' is a target rate the user hopes for, never an offer. 'parcelar_fatura' splits the month's invoice. */
+  kind: 'emprestimo' | 'meta' | 'parcelar_fatura';
+  monthlyRate: number;
+  months: number;
+  effectiveFrom: string;
+  source: string;
+}
+
 export interface Scenario {
   id: string;
   name: string;

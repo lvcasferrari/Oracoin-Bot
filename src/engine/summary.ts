@@ -10,6 +10,8 @@ export interface MonthRow {
   outflows: number;
   invoices: number;
   debts: number;
+  /** Variable card spend (the cards' estimate) inside projected invoices. */
+  variable: number;
   /** income − outflows − invoices − debts (margem livre). */
   margin: number;
   /** Projected balance at the end of the month. */
@@ -47,12 +49,18 @@ export function monthlySummary(profile: Profile, today: string): MonthRow[] {
     const outflows = sum('entry');
     const invoices = sum('invoice');
     const debts = sum('debt');
+    const variable = cents(
+      all
+        .filter((e) => e.source === 'invoice' && e.estimated)
+        .reduce((s, e) => s + Math.min(-e.amount, profile.cards.find((c) => c.id === e.refId)?.variableEstimate ?? 0), 0),
+    );
     rows.push({
       month,
       income,
       outflows,
       invoices,
       debts,
+      variable,
       margin: cents(income - outflows - invoices - debts),
       endBalance: running,
       lowBalance: cents(low),
@@ -61,6 +69,9 @@ export function monthlySummary(profile: Profile, today: string): MonthRow[] {
   }
   return rows;
 }
+
+/** Custo mensal (plano-de-quitacao §3.1): debts + invoices without variable spend, so spending less never wins the ranking. */
+export const monthlyCost = (r: MonthRow) => cents(r.debts + r.invoices - r.variable);
 
 /** The month with the lowest balance point (earliest on a tie). */
 export function criticalMonth(rows: MonthRow[]): MonthRow | null {

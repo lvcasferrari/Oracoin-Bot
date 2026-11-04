@@ -1,7 +1,7 @@
 import { addDays, addMonths, cents, dateInMonth, monthDiff, monthOf } from './dates';
 import { invoiceMonthForCharge } from './cycle';
 import { debtSchedule, debtSummary, priceSchedule, type DebtSummary } from './debt';
-import { buildEvents, criticalDay, entryOccurrence, profileBalance, projectedInvoice, type BalancePoint } from './events';
+import { buildEvents, criticalDay, entryOccurrence, invoiceFor, profileBalance, projectedInvoice, type BalancePoint } from './events';
 import { contributions, goalDelays, type GoalDelay } from './goals';
 import { availableLimit, type LimitView } from './limit';
 import { essentialOutflows, freeMargin, netIncome, referenceIncome } from './metrics';
@@ -9,7 +9,7 @@ import { param, paramRow } from './params';
 import { worstCase, type WorstCase } from './rotativo';
 import { splitInstallments, verdictFor, type Verdict } from './simulator';
 import { monthlySummary, type MonthRow } from './summary';
-import type { Debt, Entry, Installment, Invoice, Parameter, ParamKey, Profile, Scenario, ScenarioChange } from './types';
+import type { Bridge, Debt, Entry, Installment, Invoice, Parameter, ParamKey, Profile, Scenario, ScenarioChange } from './types';
 
 export type MakeId = (prefix: string) => string;
 
@@ -132,6 +132,43 @@ export function applyChanges(profile: Profile, changes: ScenarioChange[], today:
     }
   }
   return addToEstimatedInvoices(profile, p, today);
+}
+
+/**
+ * Covers each month whose lowest balance falls below `reserve` with the bridge (plano-de-quitacao §3.7):
+ * a one-off "Crédito ponte" inflow plus a Price debt, or a split of that month's invoice.
+ * At most one draw per month; the result is plain rows, so summary, critical day and commit just work.
+ */
+export function applyBridge(profile: Profile, bridge: Bridge, reserve: number, today: string, makeId: MakeId = sequence()): Profile {
+  let p = profile;
+  const done = new Set<string>();
+  const free = firstFreeDate(profile, today);
+  for (let k = 0; k < param(profile.parameters, 'projection_months', today); k++) {
+    const row = monthlySummary(p, today).find((r) => r.lowBalance < reserve && !done.has(r.month));
+    if (!row) break;
+    done.add(row.month);
+    const gap = cents(reserve - row.lowBalance);
+    if (bridge.kind === 'parcelar_fatura') {
+      // Covers at most the largest invoice of the month: pay what the gap leaves, split the rest.
+      const invoices = p.cards.map((c) => ({ card: c, amount: invoiceFor(p, c, row.month, today).cashOut })).filter((x) => x.amount > 0);
+      const top = invoices.sort((a, b) => b.amount - a.amount)[0];
+      if (top) p = applyChanges(p, [{ type: 'payPartial', cardId: top.card.id, dueMonth: row.month, payNow: cents(Math.max(0, top.amount - gap)), months: bridge.months }], today, makeId);
+      continue;
+    }
+    // The day before the month starts (or the first free day): same-day outflows sort first, so a draw on the 1st would come too late.
+    const eve = addDays(dateInMonth(row.month, 1), -1);
+    const date = free > eve ? free : eve;
+    const ids = { entry: makeId('entry'), debt: makeId('debt') };
+    p = {
+      ...p,
+      entries: [...p.entries, { id: ids.entry, kind: 'in', name: 'Crédito ponte', amount: gap, day: Number(date.slice(8)), recurrence: 'once', startMonth: monthOf(date), date }],
+      debts: [
+        ...p.debts,
+        { id: ids.debt, name: `Crédito ponte (${bridge.name})`, kind: 'emprestimo', principal: gap, monthlyRate: bridge.monthlyRate, months: bridge.months, system: 'price', startMonth: addMonths(row.month, 1), dueDay: Number(date.slice(8)) },
+      ],
+    };
+  }
+  return p;
 }
 
 /**
