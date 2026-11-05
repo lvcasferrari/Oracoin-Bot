@@ -8,14 +8,15 @@ import { ActionsList } from '../components/ActionsList';
 import { Disclaimer } from '../components/Disclaimer';
 import { EmptyState } from '../components/EmptyState';
 import { announce, Button, COLORS, FormError, trySave, useBusy } from '../components/form';
-import { BarChart, Money, Card, Pill, StackBar } from '../components/ui';
+import { BarChart, Money, Card, ListRow, Pill, StackBar } from '../components/ui';
 import { formatDateBR } from '../lib/dateInput';
 import type { HojeStackParamList, TabParamList } from '../navigation/types';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
 import { confirmAtEstimate, markPaidInFull } from './upkeep/quick';
+import { setLaterDismissed } from '../db/repos';
 
 export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParamList, 'HojeHome'>) {
-  const { db, profile, today, refresh } = useReadyData();
+  const { db, profile, meta, today, refresh } = useReadyData();
   const [busy, run] = useBusy();
   const [error, setError] = useState<string>();
   if (isEmptyProfile(profile)) return <EmptyState />;
@@ -25,6 +26,10 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
   const points = cashProjection(profileBalance(profile), events);
   const margin = freeMargin(profile, month, today);
   const tasks = pendingUpkeep(profile, today);
+  // What the 2-step onboarding left out; asked here until done or dismissed.
+  const needsInstallments = profile.cards.length > 0 && profile.installments.length === 0;
+  const needsFixed = !profile.entries.some((e) => e.kind === 'out');
+  const showLater = !meta.laterDismissed && (needsInstallments || needsFixed);
   const row = monthlySummary(profile, today)[0];
 
   // Lowest balance this month, measured on the full projection (balance after each event).
@@ -103,6 +108,21 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
           />
         )}
       </Card>
+
+      {showLater && (
+        <Card>
+          <Text style={styles.label} accessibilityRole="header">Complete seu mês</Text>
+          <Text style={styles.detail}>Quanto mais completo, mais certa a previsão. Leva um minuto cada.</Text>
+          {needsInstallments && <ListRow icon="layers-outline" label="Parcelas que já existem" detail="Some por fatura, sem listar compra por compra." onPress={() => navigation.navigate('CompleteInstallments')} />}
+          {needsFixed && <ListRow icon="home-outline" label="Contas fixas" detail="Aluguel, luz, escola…" onPress={() => navigation.navigate('CompleteFixed')} />}
+          <Button
+            title="Agora não"
+            kind="secondary"
+            disabled={busy}
+            onPress={() => run(async () => { if (await trySave(() => setLaterDismissed(db).then(() => undefined), setError)) await refresh(); })}
+          />
+        </Card>
+      )}
 
       <Button
         title="+ Lançar gasto ou entrada"

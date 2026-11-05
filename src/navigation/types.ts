@@ -22,6 +22,9 @@ export type HojeStackParamList = {
   HojeHome: undefined;
   ConfirmInvoice: InvoiceRouteParams;
   PayInvoice: InvoiceRouteParams;
+  /** "Complete depois": the onboarding steps that moved out of the first run. */
+  CompleteInstallments: undefined;
+  CompleteFixed: undefined;
   /** Quick add, hosted here so saving returns to Hoje. */
   EntryForm: FluxoStackParamList['EntryForm'];
 };
