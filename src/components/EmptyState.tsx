@@ -2,6 +2,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from './Text';
+import { Wordmark } from './Brand';
+import { Button } from './form';
 import { loadSample } from '../data/loadSample';
 import { EMPTY_BODY, EMPTY_TITLE } from '../lib/copy';
 import type { RootStackParamList } from '../navigation/types';
@@ -14,11 +16,10 @@ export function EmptyState() {
 
   return (
     <View style={styles.page}>
+      <Wordmark />
       <Text style={styles.title}>{EMPTY_TITLE}</Text>
       <Text style={styles.body}>{EMPTY_BODY}</Text>
-      <Pressable style={styles.primary} onPress={() => navigation.navigate('Onboarding')} accessibilityRole="button">
-        <Text style={styles.primaryText}>Começar</Text>
-      </Pressable>
+      <Button title="Começar" onPress={() => navigation.navigate('Onboarding')} />
       {__DEV__ && (
         <Pressable
           style={styles.secondary}
@@ -37,10 +38,8 @@ export function EmptyState() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 24, fontWeight: '600' },
-  body: { fontSize: 16, opacity: 0.7 },
-  primary: { minHeight: 48, marginTop: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: '#5fd4a0' },
-  primaryText: { color: '#06140e', fontSize: 17, fontWeight: '600' },
+  title: { fontSize: 26, fontWeight: '600', marginTop: 28 },
+  body: { fontSize: 16, color: '#4F576B', marginBottom: 12 },
   secondary: { minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   secondaryText: { fontSize: 14, opacity: 0.6 },
 });

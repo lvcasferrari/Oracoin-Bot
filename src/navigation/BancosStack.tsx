@@ -1,3 +1,4 @@
+import { STACK_OPTIONS } from '../components/theme';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BancosScreen } from '../screens/BancosScreen';
 import { AccountFormScreen, BalancesScreen } from '../screens/forms/AccountForm';
@@ -11,7 +12,7 @@ const Stack = createNativeStackNavigator<BancosStackParamList>();
 
 export function BancosStack() {
   return (
-    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
+    <Stack.Navigator screenOptions={STACK_OPTIONS}>
       <Stack.Screen name="BancosHome" component={BancosScreen} options={{ title: 'Bancos e cartões' }} />
       <Stack.Screen name="AccountForm" component={AccountFormScreen} options={{ title: 'Conta', presentation: 'modal' }} />
       <Stack.Screen name="Balances" component={BalancesScreen} options={{ title: 'Atualizar saldos', presentation: 'modal' }} />

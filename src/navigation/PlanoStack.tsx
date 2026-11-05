@@ -1,3 +1,4 @@
+import { STACK_OPTIONS } from '../components/theme';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PlanoScreen } from '../screens/PlanoScreen';
 import { BridgeFormScreen } from '../screens/plano/BridgeForm';
@@ -15,7 +16,7 @@ const Stack = createNativeStackNavigator<PlanoStackParamList>();
 
 export function PlanoStack() {
   return (
-    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
+    <Stack.Navigator screenOptions={STACK_OPTIONS}>
       <Stack.Screen name="PlanoHome" component={PlanoScreen} options={{ title: 'Plano' }} />
       <Stack.Screen name="GoalForm" component={GoalFormScreen} options={{ title: 'Meta', presentation: 'modal' }} />
       <Stack.Screen name="ParameterForm" component={ParameterFormScreen} options={{ title: 'Premissa', presentation: 'modal' }} />

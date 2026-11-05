@@ -1,15 +1,19 @@
 {
   "expo": {
-    "name": "Life Strategic Plan",
+    "name": "Alivy",
     "slug": "life-strategic-plan",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.lvcasferrari.lifestrategicplan",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "CFBundleDisplayName": "Alivy",
+        "CFBundleDevelopmentRegion": "pt-BR"
       }
     },
     "android": {
@@ -18,13 +22,28 @@
     "plugins": [
       "expo-sqlite",
       "expo-font",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/splash.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F4F5F7"
+        }
+      ]
     ],
     "extra": {
       "eas": {
         "projectId": "803ff2c7-bc97-49ec-b37b-69b8dfe75792"
       }
     },
-    "owner": "lucas_fs"
+    "owner": "lucas_fs",
+    "scheme": [
+      "alivy",
+      "com.lvcasferrari.lifestrategicplan"
+    ],
+    "icon": "./assets/brand/icon.png",
+    "backgroundColor": "#F4F5F7"
   }
 }

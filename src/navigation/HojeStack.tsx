@@ -1,3 +1,4 @@
+import { STACK_OPTIONS } from '../components/theme';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { EntryFormScreen } from '../screens/forms/EntryForm';
 import { HojeScreen } from '../screens/HojeScreen';
@@ -10,7 +11,7 @@ const Stack = createNativeStackNavigator<HojeStackParamList>();
 
 export function HojeStack() {
   return (
-    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
+    <Stack.Navigator screenOptions={STACK_OPTIONS}>
       <Stack.Screen name="HojeHome" component={HojeScreen} options={{ title: 'Hoje' }} />
       <Stack.Screen name="ConfirmInvoice" component={ConfirmInvoiceScreen} options={{ title: 'Confirmar fatura', presentation: 'modal' }} />
       <Stack.Screen name="CompleteInstallments" component={CompleteInstallmentsScreen} options={{ title: 'Parcelas', presentation: 'modal' }} />

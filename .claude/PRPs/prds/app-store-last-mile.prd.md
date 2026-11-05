@@ -43,10 +43,10 @@ We'll know we're right when, no beta, a maioria dos ciclos de fatura for confirm
 
 ## Open Questions
 
-- [ ] **Nome na loja:** "Life Strategic Plan" é inglês para um público pt-BR que inclui iniciantes. Manter ou usar um nome em português (até 30 caracteres) com subtítulo?
+- [x] **Nome na loja:** Alivy. "Life Strategic Plan" é inglês para um público pt-BR que inclui iniciantes. Manter ou usar um nome em português (até 30 caracteres) com subtítulo?
 - [ ] **Conta de desenvolvedor:** individual ou empresa? A diretriz 5.1.1(ix) pede que apps de *serviços financeiros regulados* sejam publicados por pessoa jurídica. O app só simula e não oferece crédito, então provavelmente cabe em conta individual, mas é o principal risco de rejeição.
 - [ ] **Preço:** grátis no lançamento? A monetização (spec 08) ainda está em aberto.
-- [ ] **URLs de política de privacidade e de suporte:** obrigatórias. Onde hospedar (GitHub Pages, site próprio)?
+- [x] **URLs de política de privacidade e de suporte:** páginas em `docs/`, para o GitHub Pages do repositório público.
 - [ ] **Beta:** quantos testadores e por quanto tempo (sugestão: 8–15 pessoas, 2 ciclos de fatura ≈ 6 semanas)?
 - [x] O motor já assume a fatura paga no vencimento quando o usuário não registra nada? **Sim:** sem linha salva, `invoiceFor` projeta a fatura inteira como saída no vencimento, marcada estimada.
 
@@ -130,7 +130,7 @@ Notificações de fechamento e vencimento com ações + padrão assumido + onboa
 | 1 | Padrão assumido | Fatura confirmada pelo estimado e paga no vencimento quando não há resposta; pendências visíveis em Hoje | complete | with 4 | - | - |
 | 2 | Notificações com ação | Fechamento e vencimento, ações Sim/Ajustar/Paguei, permissão após o Raio-X, ajustes em Plano | complete (falta teste em iPhone real) | with 3, 4 | 1 | - |
 | 3 | Onboarding de 2 passos | Renda e cartões antes do Raio-X; parcelas e contas fixas como "complete depois" | complete | with 2, 4 | 1 | - |
-| 4 | Pacote App Store | Ícone, splash, nome, screenshots, política de privacidade, suporte, App Privacy, notas para a revisão | pending | with 1, 2, 3 | - | - |
+| 4 | Pacote App Store | Ícone, splash, nome, screenshots, política de privacidade, suporte, App Privacy, notas para a revisão | in-progress: marca Alivy, ícone, splash, 1.0.0, `docs/` e `store/app-store-listing.md` prontos; faltam e-mail de suporte, GitHub Pages e screenshots 6,9" | with 1, 2, 3 | - | - |
 | 5 | Revisão final | `/code-review ultra`, auditoria de acessibilidade e estados de erro, teste em aparelho antigo | pending | - | 2, 3 | - |
 | 6 | Beta TestFlight | 8–15 testadores por 2 ciclos de fatura; medir as métricas; decidir as 3 abas | pending | - | 4, 5 | - |
 | 7 | Submissão | `eas build` de produção, `eas submit`, resposta à revisão | pending | - | 6 | - |
