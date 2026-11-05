@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, TextStyle, View } from 'react-native';
 
 import { formatBRL } from '../lib/money';
@@ -27,14 +28,18 @@ export function Pill({ tone, children }: { tone: 'ok' | 'warn' | 'risk'; childre
  * One line of a grouped list: label left, value right, an optional short detail under the label.
  * Tappable when `onPress` is given (44 pt minimum, WCAG 2.5.8).
  */
-export function ListRow({ label, value, detail, onPress, hint }: { label: string; value?: ReactNode; detail?: string; onPress?: () => void; hint?: string }) {
+export type IconName = ComponentProps<typeof Ionicons>['name'];
+
+export function ListRow({ label, value, detail, onPress, hint, icon }: { label: string; value?: ReactNode; detail?: string; onPress?: () => void; hint?: string; icon?: IconName }) {
   const body = (
     <>
+      {icon && <Ionicons name={icon} size={22} color="#2f6f4f" accessibilityElementsHidden importantForAccessibility="no" />}
       <View style={styles.rowText}>
         <Text style={styles.rowLabel}>{label}</Text>
         {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
       </View>
       {typeof value === 'string' ? <Text style={styles.rowValue}>{value}</Text> : value}
+      {onPress && <Ionicons name="chevron-forward" size={18} color="#595959" accessibilityElementsHidden importantForAccessibility="no" />}
     </>
   );
   return onPress ? (
@@ -43,6 +48,85 @@ export function ListRow({ label, value, detail, onPress, hint }: { label: string
     </Pressable>
   ) : (
     <View style={styles.row}>{body}</View>
+  );
+}
+
+export interface Part {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
+/**
+ * One horizontal bar split into parts, with a legend of label and value under it, so colour is never
+ * the only cue (WCAG 1.4.1). Screen readers get one summary line.
+ */
+export function StackBar({ parts, total }: { parts: Part[]; total?: number }) {
+  const shown = parts.filter((p) => p.value > 0);
+  const sum = total ?? shown.reduce((s, p) => s + p.value, 0);
+  if (sum <= 0) return null;
+  return (
+    <View accessible accessibilityLabel={shown.map((p) => `${p.label}: ${formatBRL(p.value)}`).join('; ')} style={styles.stackBox}>
+      <View style={styles.stack}>
+        {shown.map((p) => (
+          <View key={p.key} style={{ flex: p.value / sum, backgroundColor: p.color }} />
+        ))}
+      </View>
+      <View style={styles.legend}>
+        {shown.map((p) => (
+          <View key={p.key} style={styles.legendItem}>
+            <View style={[styles.swatch, { backgroundColor: p.color }]} />
+            <Text style={styles.legendText}>{p.label}</Text>
+            <Text style={styles.legendValue}>{formatBRL(p.value)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * Horizontal bars for comparing a few named values, with optional reference lines (e.g. a rate to beat).
+ * `format` turns a value into its label; values below zero are drawn as zero.
+ */
+export function HBars({ rows, markers = [], format }: {
+  rows: { key: string; label: string; value: number; tone?: 'warn' | 'ok' }[];
+  markers?: { label: string; value: number }[];
+  format: (v: number) => string;
+}) {
+  const max = Math.max(...rows.map((r) => r.value), ...markers.map((m) => m.value), 0) || 1;
+  const summary = [...rows.map((r) => `${r.label}: ${format(r.value)}`), ...markers.map((m) => `${m.label}: ${format(m.value)}`)].join('; ');
+  return (
+    <View accessible accessibilityLabel={summary} style={styles.hbars}>
+      {rows.map((r) => (
+        <View key={r.key} style={styles.hrow}>
+          <View style={styles.hhead}>
+            <Text style={styles.hlabel} numberOfLines={1}>
+              {r.label}
+            </Text>
+            <Text style={styles.hvalue}>{format(r.value)}</Text>
+          </View>
+          <View style={styles.htrack}>
+            <View style={[styles.hfill, r.tone === 'warn' && styles.hfillWarn, { width: `${(Math.max(0, r.value) / max) * 100}%` }]} />
+            {markers.map((m) => (
+              <View key={m.label} style={[styles.hmarker, { left: `${(m.value / max) * 100}%` }]} />
+            ))}
+          </View>
+        </View>
+      ))}
+      {markers.length > 0 && (
+        <View style={styles.legend}>
+          {markers.map((m) => (
+            <View key={m.label} style={styles.legendItem}>
+              <View style={styles.markerSwatch} />
+              <Text style={styles.legendText}>{m.label}</Text>
+              <Text style={styles.legendValue}>{format(m.value)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -139,5 +223,22 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   rowLabel: { fontSize: 16, color: '#1f1f1f' },
   rowDetail: { fontSize: 13, color: '#595959' },
+  stackBox: { gap: 10, marginTop: 4 },
+  stack: { flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: 'rgba(127,127,127,0.18)' },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 6 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  swatch: { width: 10, height: 10, borderRadius: 3 },
+  legendText: { fontSize: 13, color: '#595959' },
+  legendValue: { fontSize: 13, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
+  hbars: { gap: 10, marginTop: 4 },
+  hrow: { gap: 4 },
+  hhead: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  hlabel: { flex: 1, fontSize: 14, color: '#1f1f1f' },
+  hvalue: { fontSize: 14, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
+  htrack: { height: 10, borderRadius: 5, backgroundColor: 'rgba(127,127,127,0.18)' },
+  hfill: { height: 10, borderRadius: 5, backgroundColor: '#2f6f4f' },
+  hfillWarn: { backgroundColor: '#b26a00' },
+  hmarker: { position: 'absolute', top: -3, width: 2, height: 16, marginLeft: -1, backgroundColor: '#1f1f1f' },
+  markerSwatch: { width: 2, height: 12, backgroundColor: '#1f1f1f' },
   rowValue: { fontSize: 16, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
 });

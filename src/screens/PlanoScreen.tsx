@@ -122,20 +122,21 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
       </Card>
 
       <Card>
-        <ListRow label="Quitação de dívidas" value={profile.debts.length ? String(profile.debts.length) : undefined} onPress={() => navigation.navigate('Quitacao')} />
-        <ListRow label="Histórico de pagamentos" onPress={() => navigation.navigate('Historico')} />
-        <ListRow label="Crédito ponte" value={bridges.length ? String(bridges.length) : undefined} onPress={() => navigation.navigate('Pontes')} />
+        <ListRow icon="trending-down-outline" label="Quitação de dívidas" value={profile.debts.length ? String(profile.debts.length) : undefined} onPress={() => navigation.navigate('Quitacao')} />
+        <ListRow icon="checkmark-done-outline" label="Histórico de pagamentos" onPress={() => navigation.navigate('Historico')} />
+        <ListRow icon="swap-horizontal-outline" label="Crédito ponte" value={bridges.length ? String(bridges.length) : undefined} onPress={() => navigation.navigate('Pontes')} />
       </Card>
 
       <Card>
-        <ListRow label="Premissas" onPress={() => navigation.navigate('Premissas')} />
+        <ListRow icon="options-outline" label="Premissas" onPress={() => navigation.navigate('Premissas')} />
         <ListRow
+          icon="repeat-outline"
           label="Entradas e saídas"
           // initial: false keeps FluxoHome under Lançamentos even if the Fluxo tab was never opened.
           onPress={() => navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Fluxo', { screen: 'Lancamentos', initial: false })}
         />
-        <ListRow label="Importar planilha" onPress={() => navigation.navigate('Import')} />
-        <ListRow label="Privacidade e dados" onPress={() => navigation.navigate('Dados')} />
+        <ListRow icon="document-attach-outline" label="Importar planilha" onPress={() => navigation.navigate('Import')} />
+        <ListRow icon="lock-closed-outline" label="Privacidade e dados" onPress={() => navigation.navigate('Dados')} />
       </Card>
       <Disclaimer />
     </ScrollView>

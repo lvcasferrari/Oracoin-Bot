@@ -16,7 +16,8 @@
       "package": "com.lvcasferrari.lifestrategicplan"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-font"
     ],
     "extra": {
       "eas": {

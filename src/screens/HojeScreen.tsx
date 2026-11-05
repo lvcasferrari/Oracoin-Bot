@@ -1,12 +1,12 @@
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthOf, profileBalance, suggestActions } from '../engine';
+import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthlySummary, monthOf, profileBalance, suggestActions } from '../engine';
 import { ActionsList } from '../components/ActionsList';
 import { Disclaimer } from '../components/Disclaimer';
 import { EmptyState } from '../components/EmptyState';
 import { Button, COLORS } from '../components/form';
-import { BarChart, Money, Card, Pill } from '../components/ui';
+import { BarChart, Money, Card, Pill, StackBar } from '../components/ui';
 import { formatDateBR } from '../lib/dateInput';
 import type { HojeStackParamList, TabParamList } from '../navigation/types';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
@@ -20,6 +20,7 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
   const points = cashProjection(profileBalance(profile), events);
   const margin = freeMargin(profile, month, today);
   const toConfirm = invoicesToConfirm(profile, today);
+  const row = monthlySummary(profile, today)[0];
 
   // Lowest balance this month, measured on the full projection (balance after each event).
   const monthPoints = points.filter((p) => monthOf(p.date) === month);
@@ -57,6 +58,18 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
         <Text style={styles.label}>Margem livre do mês</Text>
         <Money value={margin} style={styles.big} />
         <Pill tone={margin >= 0 ? 'ok' : 'risk'}>{margin >= 0 ? 'Mês no azul' : 'Mês no vermelho'}</Pill>
+        {row && (
+          // Where the month's money goes; total is the larger of income and spending, so a shortfall shows as an unfilled track.
+          <StackBar
+            total={Math.max(row.income, row.outflows + row.invoices + row.debts)}
+            parts={[
+              { key: 'contas', label: 'Contas', value: row.outflows, color: '#8a6d1f' },
+              { key: 'faturas', label: 'Faturas', value: row.invoices, color: '#2f5d8a' },
+              { key: 'dividas', label: 'Dívidas', value: row.debts, color: '#9c4221' },
+              { key: 'sobra', label: 'Sobra', value: Math.max(0, row.margin), color: '#2f6f4f' },
+            ]}
+          />
+        )}
       </Card>
 
       {next && balanceOnDue !== null && (
