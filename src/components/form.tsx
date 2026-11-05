@@ -4,11 +4,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from './Text';
 import { BANK_PRESETS } from '../lib/banks';
 import { logError } from '../lib/log';
-
-// Borders and placeholders meet WCAG 1.4.11 / 1.4.3 on white and on the light grey background.
-// placeholder doubles as secondary text: #595959 keeps 5.6:1 even on the grey Card (rgba 127 at 12%), WCAG 1.4.3.
-export { COLORS } from './theme';
 import { ACCENT, COLORS } from './theme';
+
+// Colour tokens (and their contrast notes) live in theme.ts; re-exported for the screens that import them from here.
+export { COLORS };
 
 /** Speaks a message on iOS and Android (accessibilityLiveRegion only exists on Android). */
 export const announce = (message?: string): void => {

@@ -132,7 +132,7 @@ export function CardsStep({ added, onAdded, onDone }: {
       <FormError message={error} />
       <Button title={added.length > 0 ? 'Adicionar outro cartão' : 'Adicionar cartão'} kind={added.length > 0 ? 'secondary' : 'primary'} onPress={() => add()} disabled={busy} />
       <Button
-        title={added.length > 0 || dirty ? 'Continuar' : SKIP}
+        title={added.length > 0 || dirty ? 'Ver meu Raio-X' : 'Não tenho cartão, ver o Raio-X'}
         kind={added.length > 0 || dirty ? 'primary' : 'secondary'}
         onPress={() => (dirty ? add(() => onDone(added.length + 1)) : onDone(added.length))}
         disabled={busy}
@@ -142,7 +142,7 @@ export function CardsStep({ added, onAdded, onDone }: {
 }
 
 /** Step 3: installments already committed, summed per invoice month. Also settles each card's variable estimate. */
-export function InstallmentsStep({ cards, onDone }: { cards: { id: string; nextInvoice: number }[]; onDone: () => void }) {
+export function InstallmentsStep({ cards, onDone, standalone }: { cards: { id: string; nextInvoice: number }[]; onDone: () => void; standalone?: boolean }) {
   const { db, profile, today, refresh } = useReadyData();
   const months = gridMonths(monthOf(today), param(profile.parameters, 'projection_months', today));
   const [selected, setSelected] = useState(cards[0]?.id);
@@ -203,8 +203,8 @@ export function InstallmentsStep({ cards, onDone }: { cards: { id: string; nextI
         />
       )}
       <FormError message={error} />
-      <Button title="Continuar" onPress={() => save(true)} disabled={busy} />
-      <Button title={SKIP} kind="secondary" onPress={() => save(false)} disabled={busy} />
+      <Button title={standalone ? 'Salvar' : 'Continuar'} onPress={() => save(true)} disabled={busy} />
+      {!standalone && <Button title={SKIP} kind="secondary" onPress={() => save(false)} disabled={busy} />}
     </>
   );
 }
@@ -220,7 +220,7 @@ const QUICK: { name: string; category: Category }[] = [
 ];
 
 /** Step 4: the main fixed costs, as monthly outflows. */
-export function FixedStep({ onDone }: { onDone: () => void }) {
+export function FixedStep({ onDone, doneLabel = 'Ver meu Raio-X' }: { onDone: () => void; doneLabel?: string }) {
   const { db, profile, today, refresh } = useReadyData();
   const empty = { name: '', amount: '', day: '', category: undefined as Category | undefined };
   const [draft, setDraft] = useState(empty);
@@ -272,7 +272,7 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
       </View>
       <FormError message={error} />
       <Button title="Adicionar" kind="secondary" onPress={() => add()} disabled={busy} />
-      <Button title={added.length > 0 || dirty ? 'Ver meu Raio-X' : SKIP} onPress={() => (dirty ? add(onDone) : onDone())} disabled={busy} />
+      <Button title={added.length > 0 || dirty ? doneLabel : SKIP} onPress={() => (dirty ? add(onDone) : onDone())} disabled={busy} />
     </>
   );
 }
