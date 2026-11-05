@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PARAMETERS } from './params';
 import { makeProfile, nubank } from './testing';
-import { forecastError, invoicesToConfirm } from './upkeep';
+import { forecastError, invoicesToConfirm, pendingUpkeep } from './upkeep';
 import type { Invoice } from './types';
 
 const confirmed = (overrides: Partial<Invoice> = {}): Invoice => ({
@@ -34,6 +34,27 @@ describe('invoicesToConfirm', () => {
     const estimated = confirmed({ origin: 'estimada', amount: 1800, estimatedAtConfirm: undefined });
     expect(invoicesToConfirm(makeProfile({ invoices: [estimated] }), '2026-11-06')[0].estimate).toBe(1800);
     expect(invoicesToConfirm(makeProfile({ invoices: [confirmed()] }), '2026-11-06')).toEqual([]);
+  });
+});
+
+describe('pendingUpkeep', () => {
+  // Nubank closes on the 5th and is due on the 12th; the projection is 2000.
+  it('asks to confirm between closing and due, then asks "pagou?" from the due date for a week', () => {
+    expect(pendingUpkeep(makeProfile(), '2026-11-04')).toEqual([]);
+    expect(pendingUpkeep(makeProfile(), '2026-11-06').map((t) => t.kind)).toEqual(['confirm']);
+    expect(pendingUpkeep(makeProfile(), '2026-11-12')).toEqual([{ kind: 'pay', card: nubank, dueMonth: '2026-11', dueDate: '2026-11-12', amount: 2000 }]);
+    expect(pendingUpkeep(makeProfile(), '2026-11-19').map((t) => t.kind)).toEqual(['pay']);
+    expect(pendingUpkeep(makeProfile(), '2026-11-20')).toEqual([]);
+  });
+  it('stops asking once paid (in full or in part) and uses the stored amount', () => {
+    expect(pendingUpkeep(makeProfile({ invoices: [confirmed({ status: 'paga' })] }), '2026-11-13')).toEqual([]);
+    expect(pendingUpkeep(makeProfile({ invoices: [confirmed({ status: 'parcial', paidAmount: 500 })] }), '2026-11-13')).toEqual([]);
+    expect(pendingUpkeep(makeProfile({ invoices: [confirmed()] }), '2026-11-13')[0].amount).toBe(2100);
+  });
+  it('reaches back into last month near the turn of the month', () => {
+    const card = { ...nubank, closingDay: 23, dueDay: 30 };
+    const tasks = pendingUpkeep(makeProfile({ cards: [card], installments: [] }), '2026-12-02');
+    expect(tasks.filter((t) => t.kind === 'pay').map((t) => t.dueMonth)).toEqual(['2026-11']);
   });
 });
 
