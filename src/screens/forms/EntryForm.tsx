@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { monthOf, type Card, type Category, type Entry } from '../../engine';
 import { removeEntry, saveEntry } from '../../db/repos';
-import { Button, Chips, DateInput, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, MonthInput, trySave } from '../../components/form';
+import { Button, Chips, DateInput, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, MonthInput, More, trySave } from '../../components/form';
 import { useForm } from '../../components/useForm';
 import { CATEGORY_LABELS } from '../../lib/banks';
 import { formatDateBR, formatMonthBR } from '../../lib/dateInput';
@@ -57,8 +57,15 @@ export function EntryForm({ initial, defaultKind = 'out', today, cards, onSubmit
       ) : (
         <>
           <DayInput label="Dia do mês" value={f.draft.day} onChangeText={f.set('day')} error={f.errors.day} hint="Em meses mais curtos, conta o último dia." />
-          <MonthInput label={f.draft.recurrence === 'yearly' ? 'Mês (e ano de início)' : 'Começa em'} value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
-          <MonthInput label="Termina em (opcional)" value={f.draft.endMonth} onChangeText={f.set('endMonth')} error={f.errors.endMonth} />
+          {f.draft.recurrence === 'yearly' && (
+            <MonthInput label="Mês (e ano de início)" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
+          )}
+          {f.draft.recurrence === 'monthly' && (
+            <More label="Começa ou termina em outro mês?" open={!!(initial?.endMonth || f.errors.startMonth || f.errors.endMonth)}>
+              <MonthInput label="Começa em" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
+              <MonthInput label="Termina em (opcional)" value={f.draft.endMonth} onChangeText={f.set('endMonth')} error={f.errors.endMonth} />
+            </More>
+          )}
         </>
       )}
       {f.draft.kind === 'out' && (
@@ -71,7 +78,9 @@ export function EntryForm({ initial, defaultKind = 'out', today, cards, onSubmit
               onChange={(v) => f.set('cardId')(v === ACCOUNT ? undefined : v)}
             />
           )}
-          <Chips label="Categoria (opcional)" options={CATEGORIES} value={f.draft.category} onChange={f.set('category')} />
+          <More label="Escolher categoria" open={!!initial?.category}>
+            <Chips label="Categoria (opcional)" options={CATEGORIES} value={f.draft.category} onChange={f.set('category')} />
+          </More>
         </>
       )}
       <FormError message={f.formError} />

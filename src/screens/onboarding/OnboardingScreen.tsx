@@ -9,6 +9,15 @@ import { RaioX } from './RaioX';
 import { CardsStep, FixedStep, IncomeStep, InstallmentsStep } from './steps';
 
 const TITLES = ['Sua renda', 'Seus cartões', 'Parcelas que já existem', 'Contas fixas', 'Raio-X do seu próximo mês'];
+/** One line per step: why we ask, so every field feels worth typing. */
+const WHY = [
+  'É daqui que sai o dinheiro do mês. Só o valor líquido e o dia.',
+  'As faturas são a maior parte do mês. Uma estimativa da próxima já basta.',
+  'Compras parceladas já comprometem os próximos meses. Some por fatura.',
+  'Aluguel, luz, escola: o que sai todo mês. Toque num atalho e digite o valor.',
+  '',
+];
+const STEPS = TITLES.length - 1;
 
 /** Five short steps to the first useful view, in under 3 minutes (spec 07). */
 export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStackParamList, 'Onboarding'>) {
@@ -18,13 +27,14 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
   useEffect(() => {
     startedAt.current = Date.now();
   }, []);
-  const [step, setStep] = useState(0);
+  // -1 is the welcome screen: what is coming and how long it takes, before any field.
+  const [step, setStep] = useState(-1);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string>();
   const [busy, run] = useBusy();
   // Cards created here, with the next-invoice amount typed for each (used for the variable estimate).
   const [cards, setCards] = useState<{ id: string; nextInvoice: number }[]>([]);
-  useAnnounce(`Passo ${step + 1} de ${TITLES.length}: ${TITLES[step]}`);
+  useAnnounce(step < 0 ? 'Boas-vindas' : step < STEPS ? `Passo ${step + 1} de ${STEPS}: ${TITLES[step]}` : TITLES[step]);
 
   const toTabs = () => navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
 
@@ -40,16 +50,37 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
       toTabs();
     });
 
+  if (step < 0) {
+    return (
+      <FormScreen>
+        <Text style={styles.title} accessibilityRole="header">Vamos montar seu próximo mês</Text>
+        <Text style={styles.body}>São 4 passos curtos, uns 3 minutos. No fim você vê quanto sobra (ou falta) e quando.</Text>
+        {TITLES.slice(0, STEPS).map((t, i) => (
+          <Text key={t} style={styles.body}>{i + 1}. {t}</Text>
+        ))}
+        <Text style={styles.hint}>Valores aproximados servem. Tudo pode ser ajustado depois, e nada sai deste aparelho.</Text>
+        <Button title="Começar" onPress={() => { startedAt.current = Date.now(); setStep(0); }} />
+        <Button title="Pular, explorar sem preencher" kind="secondary" onPress={toTabs} />
+      </FormScreen>
+    );
+  }
+
   return (
     <FormScreen>
-      <View style={styles.progress} accessible accessibilityLabel={`Passo ${step + 1} de ${TITLES.length}`}>
-        {TITLES.map((t, i) => (
-          <View key={t} style={[styles.segment, i <= step && styles.segmentDone]} />
-        ))}
-      </View>
+      {step < STEPS && (
+        <>
+          <View style={styles.progress} accessible accessibilityLabel={`Passo ${step + 1} de ${STEPS}`}>
+            {TITLES.slice(0, STEPS).map((t, i) => (
+              <View key={t} style={[styles.segment, i <= step && styles.segmentDone]} />
+            ))}
+          </View>
+          <Text style={styles.hint}>Passo {step + 1} de {STEPS}</Text>
+        </>
+      )}
       <Text style={styles.title} accessibilityRole="header">
         {TITLES[step]}
       </Text>
+      {WHY[step] ? <Text style={styles.body}>{WHY[step]}</Text> : null}
 
       {step === 0 && <IncomeStep onDone={() => setStep(1)} />}
       {step === 1 && (
@@ -65,7 +96,7 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
 
       <FormError message={error} />
       {/* A first launch must never be a dead end: the app can be explored and filled in later. */}
-      {step < 4 && <Button title="Pular, explorar sem preencher" kind="secondary" disabled={busy} onPress={toTabs} />}
+      {step < 4 && <Button title="Terminar depois" kind="secondary" disabled={busy} onPress={toTabs} />}
     </FormScreen>
   );
 }
@@ -75,4 +106,6 @@ const styles = StyleSheet.create({
   segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#8883' },
   segmentDone: { backgroundColor: '#2f6f4f' },
   title: { fontSize: 24, fontWeight: '600' },
+  body: { fontSize: 15 },
+  hint: { fontSize: 13, opacity: 0.7 },
 });

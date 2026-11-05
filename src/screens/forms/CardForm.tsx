@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { Card } from '../../engine';
 import { removeCard, saveCard } from '../../db/repos';
-import { BankPicker, Button, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, trySave } from '../../components/form';
+import { BankPicker, Button, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, trySave, More } from '../../components/form';
 import { useForm } from '../../components/useForm';
 import { newId } from '../../lib/id';
 import { toInput } from '../../lib/money';
@@ -30,14 +30,13 @@ export function CardForm({ initial, onSubmit, submitLabel = 'Salvar' }: {
   return (
     <>
       <BankPicker value={f.draft.bank} onChange={f.set('bank')} error={f.errors.bank} />
-      <Input label="Apelido (opcional)" value={f.draft.name} onChangeText={f.set('name')} placeholder="Ex.: Roxinho" />
       <MoneyInput label="Limite total" value={f.draft.limit} onChangeText={f.set('limit')} error={f.errors.limit} />
       <View style={styles.row}>
         <View style={styles.half}>
-          <DayInput label="Fecha dia" value={f.draft.closingDay} onChangeText={f.set('closingDay')} error={f.errors.closingDay} />
+          <DayInput label="Vence dia" value={f.draft.dueDay} onChangeText={f.set('dueDay')} error={f.errors.dueDay} />
         </View>
         <View style={styles.half}>
-          <DayInput label="Vence dia" value={f.draft.dueDay} onChangeText={f.set('dueDay')} error={f.errors.dueDay} />
+          <DayInput label="Fecha dia (opcional)" value={f.draft.closingDay} onChangeText={f.set('closingDay')} error={f.errors.closingDay} hint="Em branco: 7 dias antes." />
         </View>
       </View>
       <MoneyInput
@@ -47,6 +46,8 @@ export function CardForm({ initial, onSubmit, submitLabel = 'Salvar' }: {
         error={f.errors.variableEstimate}
         hint="Estimado. Ajuda a prever as próximas faturas."
       />
+      <More open={!!(f.draft.name || f.draft.availableInformed || f.errors.availableInformed)}>
+      <Input label="Apelido (opcional)" value={f.draft.name} onChangeText={f.set('name')} placeholder="Ex.: Roxinho" />
       <MoneyInput
         label="Limite disponível hoje (opcional)"
         value={f.draft.availableInformed}
@@ -54,6 +55,7 @@ export function CardForm({ initial, onSubmit, submitLabel = 'Salvar' }: {
         error={f.errors.availableInformed}
         hint="Se souber, informe. Sem ele, o app mostra uma estimativa."
       />
+      </More>
       <FormError message={f.formError} />
       <Button title={submitLabel} onPress={() => f.submit(onSubmit)} disabled={f.busy} />
     </>

@@ -4,7 +4,6 @@ import { monthOf, param, type Card, type Category } from '../../engine';
 import { replaceCardInstallments, saveAccount, saveCard, saveEntry, saveInvoice, setBalanceDate } from '../../db/repos';
 import { BankPicker, Button, Chips, DayInput, FormError, Input, MoneyInput, trySave, useBusy } from '../../components/form';
 import { Money } from '../../components/ui';
-import { CATEGORY_LABELS } from '../../lib/banks';
 import { formatMonthBR } from '../../lib/dateInput';
 import { newId } from '../../lib/id';
 import { parseBRL } from '../../lib/money';
@@ -117,10 +116,10 @@ export function CardsStep({ added, onAdded, onDone }: {
       <MoneyInput label="Limite total" value={draft.limit} onChangeText={set('limit')} error={errors.limit} />
       <View style={styles.row}>
         <View style={styles.half}>
-          <DayInput label="Fecha dia" value={draft.closingDay} onChangeText={set('closingDay')} error={errors.closingDay} />
+          <DayInput label="Vence dia" value={draft.dueDay} onChangeText={set('dueDay')} error={errors.dueDay} />
         </View>
         <View style={styles.half}>
-          <DayInput label="Vence dia" value={draft.dueDay} onChangeText={set('dueDay')} error={errors.dueDay} />
+          <DayInput label="Fecha dia (opcional)" value={draft.closingDay} onChangeText={set('closingDay')} error={errors.closingDay} hint="Em branco: 7 dias antes." />
         </View>
       </View>
       <MoneyInput label="Quanto vem na próxima fatura? (estimativa serve)" value={draft.nextInvoice} onChangeText={set('nextInvoice')} error={errors.nextInvoice} />
@@ -208,7 +207,6 @@ const QUICK: { name: string; category: Category }[] = [
   { name: 'Mercado', category: 'alimentacao' },
   { name: 'Transporte', category: 'transporte' },
 ];
-const CATEGORIES = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value: value as Category, label }));
 
 /** Step 4: the main fixed costs, as monthly outflows. */
 export function FixedStep({ onDone }: { onDone: () => void }) {
@@ -222,7 +220,7 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
 
   const add = () => run(async () => {
     const entry = entryFromDraft({
-      id: newId('entry'), kind: 'out', name: draft.name, amount: draft.amount, recurrence: 'monthly', day: draft.day,
+      id: newId('entry'), kind: 'out', name: draft.name, amount: draft.amount, recurrence: 'monthly', day: draft.day.trim() || '10',
       startMonth: formatMonthBR(monthOf(today)), endMonth: '', date: '', category: draft.category,
     });
     if (!entry.ok) {
@@ -256,10 +254,9 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
           <MoneyInput label="Valor por mês" value={draft.amount} onChangeText={(amount) => setDraft((d) => ({ ...d, amount }))} error={errors.amount} />
         </View>
         <View style={styles.half}>
-          <DayInput label="Dia" value={draft.day} onChangeText={(day) => setDraft((d) => ({ ...d, day }))} error={errors.day} />
+          <DayInput label="Dia (opcional)" hint="Em branco: dia 10." value={draft.day} onChangeText={(day) => setDraft((d) => ({ ...d, day }))} error={errors.day} />
         </View>
       </View>
-      <Chips label="Categoria (opcional)" options={CATEGORIES} value={draft.category} onChange={(category) => setDraft((d) => ({ ...d, category }))} />
       <FormError message={error} />
       <Button title="Adicionar" kind="secondary" onPress={add} disabled={busy} />
       <Button title={added.length > 0 ? 'Ver meu Raio-X' : SKIP} onPress={onDone} disabled={busy} />
