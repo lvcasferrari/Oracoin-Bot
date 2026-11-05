@@ -58,7 +58,10 @@ export function EntryForm({ initial, defaultKind = 'out', once, today, cards, on
         <>
           <DayInput label="Dia do mês" value={f.draft.day} onChangeText={f.set('day')} error={f.errors.day} hint="Em meses mais curtos, conta o último dia." />
           {f.draft.recurrence === 'yearly' && (
-            <MonthInput label="Mês (e ano de início)" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
+            <>
+              <MonthInput label="Mês (e ano de início)" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
+              <MonthInput label="Termina em (opcional)" value={f.draft.endMonth} onChangeText={f.set('endMonth')} error={f.errors.endMonth} />
+            </>
           )}
           {f.draft.recurrence === 'monthly' && (
             <More label="Começa ou termina em outro mês?" open={!!(initial?.endMonth || f.errors.startMonth || f.errors.endMonth)}>
@@ -89,7 +92,8 @@ export function EntryForm({ initial, defaultKind = 'out', once, today, cards, on
   );
 }
 
-export function EntryFormScreen({ route, navigation }: NativeStackScreenProps<FluxoStackParamList, 'EntryForm'>) {
+// Shared by the Fluxo and Hoje stacks; it only reads its params and goes back.
+export function EntryFormScreen({ route, navigation }: Pick<NativeStackScreenProps<FluxoStackParamList, 'EntryForm'>, 'route'> & { navigation: { goBack: () => void } }) {
   const { db, profile, today, refresh } = useReadyData();
   const initial = profile.entries.find((e) => e.id === route.params?.id);
   const [confirming, setConfirming] = useState(false);

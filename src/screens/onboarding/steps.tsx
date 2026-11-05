@@ -64,7 +64,7 @@ export function IncomeStep({ onDone }: { onDone: () => void }) {
 
 /** Step 2: cards, one at a time, with the next invoice amount (an estimate is fine). */
 export function CardsStep({ added, onAdded, onDone }: {
-  added: { id: string; nextInvoice: number }[]; onAdded: (card: { id: string; nextInvoice: number }) => void; onDone: () => void;
+  added: { id: string; nextInvoice: number }[]; onAdded: (card: { id: string; nextInvoice: number }) => void; onDone: (cardCount: number) => void;
 }) {
   const { db, profile, today, refresh } = useReadyData();
   const empty = { bank: '', limit: '', closingDay: '', dueDay: '', nextInvoice: '' };
@@ -74,8 +74,10 @@ export function CardsStep({ added, onAdded, onDone }: {
   const set = (key: keyof typeof empty) => (value: string) => setDraft((d) => ({ ...d, [key]: value }));
   const [busy, run] = useBusy();
 
+  // A filled-in card is saved on Continue too: typing it and skipping "Adicionar" must not lose it.
+  const dirty = Object.values(draft).some((v) => v.trim() !== '');
   // One add at a time: a double tap must not create the same card twice.
-  const add = () => run(async () => {
+  const add = (then?: () => void) => run(async () => {
     const id = newId('card');
     const nextInvoice = draft.nextInvoice.trim() === '' ? 0 : parseBRL(draft.nextInvoice);
     const card = cardFromDraft({ id, bank: draft.bank, name: '', closingDay: draft.closingDay, dueDay: draft.dueDay, limit: draft.limit, variableEstimate: '', availableInformed: '' });
@@ -95,6 +97,7 @@ export function CardsStep({ added, onAdded, onDone }: {
       await refresh();
       onAdded({ id, nextInvoice });
       setDraft(empty);
+      then?.();
     }
   });
 
@@ -124,8 +127,13 @@ export function CardsStep({ added, onAdded, onDone }: {
       </View>
       <MoneyInput label="Quanto vem na próxima fatura? (estimativa serve)" value={draft.nextInvoice} onChangeText={set('nextInvoice')} error={errors.nextInvoice} />
       <FormError message={error} />
-      <Button title={added.length > 0 ? 'Adicionar outro cartão' : 'Adicionar cartão'} kind={added.length > 0 ? 'secondary' : 'primary'} onPress={add} disabled={busy} />
-      <Button title={added.length > 0 ? 'Continuar' : SKIP} kind={added.length > 0 ? 'primary' : 'secondary'} onPress={onDone} disabled={busy} />
+      <Button title={added.length > 0 ? 'Adicionar outro cartão' : 'Adicionar cartão'} kind={added.length > 0 ? 'secondary' : 'primary'} onPress={() => add()} disabled={busy} />
+      <Button
+        title={added.length > 0 || dirty ? 'Continuar' : SKIP}
+        kind={added.length > 0 || dirty ? 'primary' : 'secondary'}
+        onPress={() => (dirty ? add(() => onDone(added.length + 1)) : onDone(added.length))}
+        disabled={busy}
+      />
     </>
   );
 }
@@ -218,7 +226,8 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
   const added = profile.entries.filter((e) => e.kind === 'out');
   const [busy, run] = useBusy();
 
-  const add = () => run(async () => {
+  const dirty = draft.name.trim() !== '' || draft.amount.trim() !== '';
+  const add = (then?: () => void) => run(async () => {
     const entry = entryFromDraft({
       id: newId('entry'), kind: 'out', name: draft.name, amount: draft.amount, recurrence: 'monthly', day: draft.day.trim() || '10',
       startMonth: formatMonthBR(monthOf(today)), endMonth: '', date: '', category: draft.category,
@@ -231,6 +240,7 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
     if (await trySave(() => saveEntry(db, entry.value).then(() => undefined), setError)) {
       await refresh();
       setDraft(empty);
+      then?.();
     }
   });
 
@@ -258,8 +268,8 @@ export function FixedStep({ onDone }: { onDone: () => void }) {
         </View>
       </View>
       <FormError message={error} />
-      <Button title="Adicionar" kind="secondary" onPress={add} disabled={busy} />
-      <Button title={added.length > 0 ? 'Ver meu Raio-X' : SKIP} onPress={onDone} disabled={busy} />
+      <Button title="Adicionar" kind="secondary" onPress={() => add()} disabled={busy} />
+      <Button title={added.length > 0 || dirty ? 'Ver meu Raio-X' : SKIP} onPress={() => (dirty ? add(onDone) : onDone())} disabled={busy} />
     </>
   );
 }
