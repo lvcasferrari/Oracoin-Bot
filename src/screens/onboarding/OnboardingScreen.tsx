@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { setOnboarded } from '../../db/repos';
 import { Button, FormError, FormScreen, trySave, useAnnounce, useBusy } from '../../components/form';
@@ -74,7 +74,13 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
               <View key={t} style={[styles.segment, i <= step && styles.segmentDone]} />
             ))}
           </View>
-          <Text style={styles.hint}>Passo {step + 1} de {STEPS}</Text>
+          <View style={styles.topRow}>
+            <Text style={styles.hint}>Passo {step + 1} de {STEPS}</Text>
+            {/* A first launch must never be a dead end: the app can be explored and filled in later. */}
+            <Pressable onPress={toTabs} disabled={busy} accessibilityRole="button" hitSlop={12} style={styles.later}>
+              <Text style={styles.link}>Terminar depois</Text>
+            </Pressable>
+          </View>
         </>
       )}
       <Text style={styles.title} accessibilityRole="header">
@@ -95,8 +101,6 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
       {step === 4 && <RaioX onFinish={finish} />}
 
       <FormError message={error} />
-      {/* A first launch must never be a dead end: the app can be explored and filled in later. */}
-      {step < 4 && <Button title="Terminar depois" kind="secondary" disabled={busy} onPress={toTabs} />}
     </FormScreen>
   );
 }
@@ -108,4 +112,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: '600' },
   body: { fontSize: 15 },
   hint: { fontSize: 13, opacity: 0.7 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  later: { minHeight: 44, justifyContent: 'center' },
+  link: { fontSize: 15, color: '#2f6f4f', fontWeight: '600' },
 });
