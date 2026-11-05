@@ -38,7 +38,6 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
             <Money value={costs.at(-1) ?? 0} style={styles.figureValue} />
           </View>
         </View>
-        <Text style={styles.meta}>Parcelas de dívidas e faturas, sem o gasto variável do cartão.</Text>
       </Card>
 
       <Card>
@@ -62,9 +61,7 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
                 <Text style={styles.name}>{v.debt.name}</Text>
                 {v.payoffAmount !== null && <Money value={v.payoffAmount} style={styles.strong} />}
               </View>
-              <Text style={styles.meta}>
-                {v.payoffAmount === null ? 'Não permite quitar antes' : v.quoted ? 'Valor cotado com o credor' : 'Estimado pelo saldo do contrato; toque para informar a cotação'}
-              </Text>
+              <Text style={styles.meta}>{v.payoffAmount === null ? 'Não permite quitar antes' : v.quoted ? 'Valor cotado' : 'Valor estimado'}</Text>
               {reading && <Pill tone={reading.tone}>{reading.label}</Pill>}
               <Text style={styles.why}>{debtWhy(v, ctx)}</Text>
             </Pressable>
@@ -74,8 +71,7 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
       </Card>
 
       <Text style={styles.note}>
-        Reserva mínima: {formatBRL(reserve)}. Rendimento do caixa: {pct(ctx.cashYield)} ao mês. As duas são premissas editáveis em Plano.
-        {ctx.bridgeRate === undefined ? ' Sem crédito ponte informado, a leitura compara só com o rendimento do caixa.' : ''}
+        Reserva mínima {formatBRL(reserve)} · caixa rende {pct(ctx.cashYield)} a.m. Toque numa dívida para informar a cotação.
       </Text>
       <Button title="Comparar estratégias" onPress={() => navigation.navigate('Estrategias')} />
       <Disclaimer />

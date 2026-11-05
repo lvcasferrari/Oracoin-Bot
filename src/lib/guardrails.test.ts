@@ -44,6 +44,9 @@ describe('guardrails', () => {
       'screens/simulator/ResultCard.tsx',
       'screens/onboarding/RaioX.tsx',
       'screens/upkeep/PayInvoiceScreen.tsx',
+      'screens/plano/Quitacao.tsx',
+      'screens/plano/Estrategias.tsx',
+      'screens/plano/Roteiro.tsx',
     ];
     for (const path of withResults) {
       const file = source.find((f) => f.path === path);

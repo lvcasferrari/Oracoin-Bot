@@ -90,7 +90,7 @@ export function EstrategiasScreen({ navigation }: NativeStackScreenProps<PlanoSt
       {list && (
         <Card>
           <Text style={styles.label} accessibilityRole="header">
-            {list.length} {list.length === 1 ? 'estratégia' : 'melhores estratégias'} · custo médio dos próximos {months} meses
+            Custo médio em {months} meses
           </Text>
           <View accessibilityRole="radiogroup">
             {list.map((s, i) => {
@@ -112,12 +112,10 @@ export function EstrategiasScreen({ navigation }: NativeStackScreenProps<PlanoSt
                     {i + 1}. {title}
                   </Text>
                   <View style={styles.grid}>
-                    <Metric label="Custo mensal médio" value={s.avgMonthlyCost} />
-                    <Metric label="Custo no fim" value={s.endMonthlyCost} />
+                    <Metric label="Custo mensal" value={s.avgMonthlyCost} />
                     <Metric label="Crédito novo" value={s.newCredit} />
-                    <Metric label="Juros do crédito novo" value={s.newInterest} />
                   </View>
-                  {!s.covered && <Text style={styles.warn}>O saldo ainda fica abaixo da reserva mínima em algum mês.</Text>}
+                  {!s.covered && <Text style={styles.warn}>Ainda falta caixa em algum mês.</Text>}
                 </Pressable>
               );
             })}
@@ -130,11 +128,17 @@ export function EstrategiasScreen({ navigation }: NativeStackScreenProps<PlanoSt
 
       {chosen && (
         <Card>
+          <View style={styles.grid}>
+            <Metric label="Custo no fim" value={chosen.endMonthlyCost} />
+            <Metric label="Juros do crédito novo" value={chosen.newInterest} />
+          </View>
           <Text style={styles.label} accessibilityRole="header">
-            Custo mensal: {strategyTitle(chosen)}
+            Custo mensal, mês a mês
           </Text>
           <BarChart bars={chosen.rows.map((r) => ({ key: r.month, label: shortMonth(r.month).slice(0, 3), value: monthlyCost(r) }))} />
-          <Text style={styles.note}>Parcelas e faturas sem o gasto variável. Menor saldo previsto: <Money value={chosen.lowestBalance} />.</Text>
+          <Text style={styles.note}>
+            Menor saldo previsto: <Money value={chosen.lowestBalance} />
+          </Text>
           <Button
             title="Ver roteiro mês a mês"
             kind="secondary"

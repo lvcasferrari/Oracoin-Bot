@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { availableLimit, cents, debtPayment, invoiceFor, monthDiff, monthOf, type Debt } from '../engine';
 import { Button } from '../components/form';
-import { Card, Meter, Money } from '../components/ui';
+import { Card, formatBRL, Meter, Money } from '../components/ui';
 import { formatDateBR, shortMonth } from '../lib/dateInput';
 import type { BancosStackParamList } from '../navigation/types';
 import { useReadyData } from '../state/AppData';
@@ -47,7 +47,7 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
             <Text style={styles.bank} accessibilityRole="header">
               {bank}
             </Text>
-            {cards.length > 0 && (
+            {cards.length > 1 && (
               <Text style={styles.body}>
                 Vence em {shortMonth(month)}: <Money value={dueThisMonth} />
               </Text>
@@ -65,23 +65,25 @@ export function BancosScreen({ navigation }: NativeStackScreenProps<BancosStackP
               return (
                 <View key={c.id} style={styles.cardBox}>
                   <Pressable onPress={() => navigation.navigate('CardForm', { id: c.id })} accessibilityRole="button" accessibilityHint="Editar cartão">
-                    <Text style={styles.strong}>{c.name}</Text>
+                    <View style={styles.item}>
+                      <Text style={[styles.strong, styles.flex]}>{c.name}</Text>
+                      <Money value={invoice.total} style={styles.strong} />
+                    </View>
                     <Text style={styles.meta}>
-                      Fecha dia {c.closingDay} · vence dia {c.dueDay}
+                      Fatura {shortMonth(month)} {invoice.estimated ? 'estimada' : 'confirmada'} · vence dia {c.dueDay}
                     </Text>
-                    <Text style={styles.body}>
-                      Fatura {shortMonth(month)}: <Money value={invoice.total} style={styles.strong} />
-                      {invoice.estimated ? ' estimada' : ' confirmada'}
-                    </Text>
-                    <Meter used={cents(c.limit - limit.value)} total={c.limit} label={limit.estimated ? 'Limite usado (estimativa)' : 'Limite usado'} />
-                    <Text style={styles.meta}>
-                      Livre <Money value={limit.value} /> · parcelas futuras <Money value={future} />
-                    </Text>
+                    <Meter used={cents(c.limit - limit.value)} total={c.limit} label={`Limite usado · livre ${formatBRL(limit.value)}${limit.estimated ? ' (estimado)' : ''}`} />
                   </Pressable>
-                  <Button title="Parcelas futuras" kind="secondary" onPress={() => navigation.navigate('InstallmentsForm', { cardId: c.id })} />
-                  {invoice.row?.status !== 'paga' && (
-                    <Button title={`Registrar pagamento de ${shortMonth(month)}`} kind="secondary" onPress={() => navigation.navigate('PayInvoice', { cardId: c.id, dueMonth: month })} />
-                  )}
+                  <View style={styles.links}>
+                    <Pressable style={styles.linkBox} onPress={() => navigation.navigate('InstallmentsForm', { cardId: c.id })} accessibilityRole="button">
+                      <Text style={styles.link}>Parcelas{future > 0 ? ` · ${formatBRL(future)}` : ''}</Text>
+                    </Pressable>
+                    {invoice.row?.status !== 'paga' && (
+                      <Pressable style={styles.linkBox} onPress={() => navigation.navigate('PayInvoice', { cardId: c.id, dueMonth: month })} accessibilityRole="button">
+                        <Text style={styles.link}>Registrar pagamento</Text>
+                      </Pressable>
+                    )}
+                  </View>
                 </View>
               );
             })}
@@ -117,10 +119,13 @@ const styles = StyleSheet.create({
   actions: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   flex: { flex: 1 },
-  hint: { fontSize: 12, opacity: 0.6 },
+  hint: { fontSize: 13, color: '#595959' },
+  links: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 },
+  linkBox: { minHeight: 44, justifyContent: 'center' },
+  link: { fontSize: 15, fontWeight: '600', color: '#265a40' },
   bank: { fontSize: 18, fontWeight: '600' },
   body: { fontSize: 15 },
-  meta: { fontSize: 13, opacity: 0.6 },
+  meta: { fontSize: 13, color: '#595959' },
   strong: { fontSize: 16, fontWeight: '600' },
   item: { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 8 },
   cardBox: { gap: 8, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: '#8884' },

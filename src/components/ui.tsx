@@ -23,9 +23,34 @@ export function Pill({ tone, children }: { tone: 'ok' | 'warn' | 'risk'; childre
   );
 }
 
+/**
+ * One line of a grouped list: label left, value right, an optional short detail under the label.
+ * Tappable when `onPress` is given (44 pt minimum, WCAG 2.5.8).
+ */
+export function ListRow({ label, value, detail, onPress, hint }: { label: string; value?: ReactNode; detail?: string; onPress?: () => void; hint?: string }) {
+  const body = (
+    <>
+      <View style={styles.rowText}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
+      </View>
+      {typeof value === 'string' ? <Text style={styles.rowValue}>{value}</Text> : value}
+    </>
+  );
+  return onPress ? (
+    <Pressable style={styles.row} onPress={onPress} accessibilityRole="button" accessibilityHint={hint}>
+      {body}
+    </Pressable>
+  ) : (
+    <View style={styles.row}>{body}</View>
+  );
+}
+
 export interface Bar {
   key: string;
   label: string;
+  /** Text under the bar when it differs from `label` (which screen readers always get); '' hides it. */
+  axis?: string;
   value: number;
   /** Marks one bar (e.g. the critical month) with an outline. */
   highlight?: boolean;
@@ -52,8 +77,8 @@ export function BarChart({ bars, height = 120, onPress }: { bars: Bar[]; height?
             <View style={{ height: -min * scale }}>
               {b.value < 0 && <View style={[styles.bar, styles.barDown, b.highlight && styles.barMark, { height: Math.max(2, -b.value * scale) }]} />}
             </View>
-            <Text style={styles.barLabel} numberOfLines={1}>
-              {b.label}
+            <Text style={[styles.barLabel, b.axis !== undefined && styles.axisLabel]} numberOfLines={1}>
+              {b.axis ?? b.label}
             </Text>
           </>
         );
@@ -97,6 +122,8 @@ const styles = StyleSheet.create({
   barMark: { borderWidth: 2, borderColor: '#b26a00' },
   zero: { height: 1, backgroundColor: '#767676' },
   barLabel: { fontSize: 11, textAlign: 'center', opacity: 0.75, marginTop: 4 },
+  // Sparse axis labels may overflow their narrow bar column.
+  axisLabel: { width: 40, alignSelf: 'center' },
   meterBox: { gap: 4 },
   meterHead: { flexDirection: 'row', justifyContent: 'space-between' },
   meterLabel: { fontSize: 13, opacity: 0.75 },
@@ -108,4 +135,9 @@ const styles = StyleSheet.create({
   warn: { backgroundColor: '#fff0c2' },
   risk: { backgroundColor: '#ffd6d6' },
   pillText: { fontSize: 13, color: '#222' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingVertical: 6 },
+  rowText: { flex: 1, gap: 2 },
+  rowLabel: { fontSize: 16, color: '#1f1f1f' },
+  rowDetail: { fontSize: 13, color: '#595959' },
+  rowValue: { fontSize: 16, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
 });

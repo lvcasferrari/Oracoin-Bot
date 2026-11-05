@@ -22,21 +22,21 @@ function ActionItem({ action }: { action: Action }) {
     <View style={styles.item}>
       <Text style={styles.title}>{action.title}</Text>
       <Text style={styles.body}>{action.message}</Text>
-      <Text style={styles.cost}>
-        {action.impact.totalCost > 0 ? (
-          <>
-            Custo estimado: até <Money value={action.impact.totalCost} /> em encargos
-          </>
-        ) : (
-          'Sem custo'
-        )}
-        {' · '}menor saldo previsto: <Money value={action.impact.criticalBalanceAfter} />
-      </Text>
       <Pressable onPress={() => setOpen((o) => !o)} accessibilityRole="button" style={styles.link}>
-        <Text style={styles.linkText}>{open ? 'Esconder' : 'Por que você está vendo isto'}</Text>
+        <Text style={styles.linkText}>{open ? 'Ocultar detalhes' : 'Ver detalhes'}</Text>
       </Pressable>
       {open && (
         <>
+          <Text style={styles.hint}>
+            {action.impact.totalCost > 0 ? (
+              <>
+                Custo estimado: até <Money value={action.impact.totalCost} /> em encargos
+              </>
+            ) : (
+              'Sem custo'
+            )}
+            {' · '}menor saldo previsto: <Money value={action.impact.criticalBalanceAfter} />
+          </Text>
           <Text style={styles.hint}>{action.why}</Text>
           {action.assumptions.map((p) => (
             <Text key={`${p.key}-${p.effectiveFrom}`} style={styles.hint}>
@@ -51,12 +51,11 @@ function ActionItem({ action }: { action: Action }) {
 
 const styles = StyleSheet.create({
   list: { gap: 10 },
-  item: { gap: 4, padding: 10, borderRadius: 12, backgroundColor: 'rgba(47,111,79,0.08)' },
-  title: { fontSize: 15, fontWeight: '600' },
-  body: { fontSize: 15 },
-  cost: { fontSize: 13, opacity: 0.8 },
-  hint: { fontSize: 12, opacity: 0.7 },
+  // Flat inside its Card: no tinted box (cards are never nested).
+  item: { gap: 4 },
+  title: { fontSize: 16, fontWeight: '600', color: '#1f1f1f' },
+  body: { fontSize: 15, lineHeight: 21, color: '#1f1f1f' },
+  hint: { fontSize: 13, lineHeight: 18, color: '#595959' },
   link: { minHeight: 44, justifyContent: 'center' },
-  // Darker green on the tinted item keeps 4.5:1 contrast.
   linkText: { fontSize: 14, color: '#265a40', fontWeight: '500' },
 });
