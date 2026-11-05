@@ -72,6 +72,12 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
         )}
       </Card>
 
+      <Button
+        title="+ Lançar gasto ou entrada"
+        kind="secondary"
+        onPress={() => navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Fluxo', { screen: 'EntryForm', params: { kind: 'out', once: true }, initial: false })}
+      />
+
       {next && balanceOnDue !== null && (
         <Card>
           <Text style={styles.label}>Próximo vencimento</Text>

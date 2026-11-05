@@ -27,7 +27,8 @@ export type HojeStackParamList = {
 export type FluxoStackParamList = {
   FluxoHome: undefined;
   Lancamentos: undefined;
-  EntryForm: { id?: string; kind?: Entry['kind'] } | undefined;
+  /** `once`: a one-off spend dated today (the quick add on Hoje). */
+  EntryForm: { id?: string; kind?: Entry['kind']; once?: boolean } | undefined;
 };
 
 export type SimularStackParamList = {
