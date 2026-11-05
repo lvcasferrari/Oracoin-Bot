@@ -240,7 +240,7 @@ export function SimuladorScreen() {
 }
 
 const styles = StyleSheet.create({
-  message: { fontSize: 15, fontWeight: '500', color: '#7ee2b4' },
+  message: { fontSize: 15, fontWeight: '500', color: '#0040CC' },
   label: { fontSize: 13, opacity: 0.75 },
   body: { fontSize: 15 },
   hint: { fontSize: 13, opacity: 0.75 },
@@ -249,10 +249,10 @@ const styles = StyleSheet.create({
   remove: { minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' },
   removeText: { fontSize: 14, opacity: 0.8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  tile: { width: '47%', minHeight: 96, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', gap: 4 },
+  tile: { width: '47%', minHeight: 96, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(10,15,29,0.14)', gap: 4 },
   tileTitle: { fontSize: 15, fontWeight: '600' },
   tileHint: { fontSize: 12, opacity: 0.75 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 20, fontWeight: '600', flex: 1 },
-  link: { fontSize: 15, color: '#7ee2b4', fontWeight: '500' },
+  link: { fontSize: 15, color: '#0040CC', fontWeight: '500' },
 });

@@ -54,9 +54,9 @@ const styles = StyleSheet.create({
   list: { gap: 10 },
   // Flat inside its Card: no tinted box (cards are never nested).
   item: { gap: 4 },
-  title: { fontSize: 16, fontWeight: '600', color: '#eef3f1' },
-  body: { fontSize: 15, lineHeight: 21, color: '#eef3f1' },
-  hint: { fontSize: 13, lineHeight: 18, color: '#a3b1ac' },
+  title: { fontSize: 16, fontWeight: '600', color: '#0A0F1D' },
+  body: { fontSize: 15, lineHeight: 21, color: '#0A0F1D' },
+  hint: { fontSize: 13, lineHeight: 18, color: '#4F576B' },
   link: { minHeight: 44, justifyContent: 'center' },
-  linkText: { fontSize: 14, color: '#7ee2b4', fontWeight: '500' },
+  linkText: { fontSize: 14, color: '#0040CC', fontWeight: '500' },
 });

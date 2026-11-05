@@ -1,5 +1,7 @@
 # Product
 
+Ships as **Alivy** (App Store name; the repo and bundle id keep the old "Life Strategic Plan" naming).
+
 <!-- impeccable:product-schema 1 -->
 
 ## Platform
@@ -29,7 +31,7 @@ Born from a personal spreadsheet called "Life Strategic Plan" and the "Plano de 
 - pt-BR only, BRL money, dates dd/mm/aaaa.
 - No investment advice and no credit offers (CVM/BCB guardrails): the fixed disclaimer "Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito." appears on result screens; a banned-words list in `src/lib/copy.ts` is enforced by tests.
 - The app compares only options the user informed; a target ("meta") rate is labelled "meta, não oferta" and never ranks first.
-- Dark mode is the default and only theme: a "liquid glass" look (frosted cards on a teal-to-indigo gradient, mint accent). Tokens in `src/components/theme.ts`.
+- Brand: **Alivy** ("Inteligência & alívio financeiro"; brandbook in the Obsidian vault). Light & airy is the only theme: off-white air, frosted white glass, the two-lens symbol. Tokens in `src/components/theme.ts`, rules in DESIGN.md.
 - Open: Android backup policy, monetization.
 
 ## Brand Commitments

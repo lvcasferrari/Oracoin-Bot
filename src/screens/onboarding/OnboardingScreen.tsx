@@ -8,6 +8,7 @@ import { Button, FormError, FormScreen, trySave, useAnnounce, useBusy } from '..
 import type { RootStackParamList } from '../../navigation/types';
 import { useReadyData } from '../../state/AppData';
 import { RaioX } from './RaioX';
+import { Wordmark } from '../../components/Brand';
 import { CardsStep, IncomeStep } from './steps';
 
 // Two questions before the first useful view; installments and fixed bills are asked later, on Hoje.
@@ -60,7 +61,8 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
   if (step < 0) {
     return (
       <FormScreen>
-        <Text style={styles.title} accessibilityRole="header">Vamos montar seu próximo mês</Text>
+        <Wordmark tagline="Seu fluxo de caixa, no futuro" />
+        <Text style={[styles.title, styles.welcomeTitle]} accessibilityRole="header">Vamos montar seu próximo mês</Text>
         <Text style={styles.body}>São 2 perguntas, cerca de 1 minuto. No fim você vê quanto sobra (ou falta) e quando. Parcelas e contas fixas dá para completar depois.</Text>
         {TITLES.slice(0, STEPS).map((t, i) => (
           <Text key={t} style={styles.body}>{i + 1}. {t}</Text>
@@ -113,11 +115,12 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
 const styles = StyleSheet.create({
   progress: { flexDirection: 'row', gap: 6 },
   segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#8883' },
-  segmentDone: { backgroundColor: '#5fd4a0' },
+  segmentDone: { backgroundColor: '#0052FF' },
   title: { fontSize: 24, fontWeight: '600' },
+  welcomeTitle: { marginTop: 24 },
   body: { fontSize: 15 },
   hint: { fontSize: 13, opacity: 0.7 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   later: { minHeight: 44, justifyContent: 'center' },
-  link: { fontSize: 15, color: '#5fd4a0', fontWeight: '600' },
+  link: { fontSize: 15, color: '#0052FF', fontWeight: '600' },
 });

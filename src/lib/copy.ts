@@ -11,5 +11,5 @@ export const BANNED = [
 ];
 
 export const EMPTY_TITLE = 'Vamos montar seu mês.';
-export const EMPTY_BODY = 'Leva menos de 3 minutos.';
+export const EMPTY_BODY = 'Duas perguntas, cerca de 1 minuto.'
 export const LOAD_ERROR = 'Não consegui abrir seus dados. Nada foi apagado.';

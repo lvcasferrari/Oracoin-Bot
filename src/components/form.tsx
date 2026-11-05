@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from './Text';
 import { BANK_PRESETS } from '../lib/banks';
 import { logError } from '../lib/log';
-import { ACCENT, COLORS } from './theme';
+import { ACCENT, COLORS, FONTS } from './theme';
 
 // Colour tokens (and their contrast notes) live in theme.ts; re-exported for the screens that import them from here.
 export { COLORS };
@@ -206,21 +206,21 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '500' },
   hint: { fontSize: 12, opacity: 0.7 },
   error: { fontSize: 13, color: COLORS.error },
-  input: { borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: COLORS.text },
+  input: { borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 12, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: COLORS.text, fontFamily: FONTS.body[400] },
   inputError: { borderColor: COLORS.error },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.06)' },
+  chip: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.85)' },
   chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: 15 },
-  chipTextSelected: { color: '#06140e', fontWeight: '600' },
+  chipTextSelected: { color: '#FFFFFF', fontWeight: '600' },
   button: { minHeight: 48, borderRadius: 24, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
   primary: { backgroundColor: COLORS.primary },
   danger: { backgroundColor: COLORS.danger },
-  secondary: { borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.07)' },
+  secondary: { borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.75)' },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.5 },
-  buttonText: { color: '#06140e', fontSize: 16, fontWeight: '600' },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
   secondaryText: { color: COLORS.text, fontWeight: '500' },
-  confirm: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: 'rgba(163,58,58,0.08)' },
+  confirm: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: 'rgba(232,141,93,0.12)' },
   confirmText: { fontSize: 15 },
 });

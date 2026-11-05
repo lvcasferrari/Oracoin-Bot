@@ -94,16 +94,16 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
       <Card>
         <Text style={styles.label}>Margem livre do mês</Text>
         <Money value={margin} style={styles.big} />
-        <Pill tone={margin >= 0 ? 'ok' : 'risk'}>{margin >= 0 ? 'Mês no azul' : 'Mês no vermelho'}</Pill>
+        <Pill tone={margin >= 0 ? 'ok' : 'risk'}>{margin >= 0 ? 'Mês tranquilo' : 'Mês apertado'}</Pill>
         {row && (
           // Where the month's money goes; total is the larger of income and spending, so a shortfall shows as an unfilled track.
           <StackBar
             total={Math.max(row.income, row.outflows + row.invoices + row.debts)}
             parts={[
-              { key: 'contas', label: 'Contas', value: row.outflows, color: '#e8c36a' },
-              { key: 'faturas', label: 'Faturas', value: row.invoices, color: '#6fa8ff' },
-              { key: 'dividas', label: 'Dívidas', value: row.debts, color: '#ff9f6e' },
-              { key: 'sobra', label: 'Sobra', value: Math.max(0, row.margin), color: '#5fd4a0' },
+              { key: 'contas', label: 'Contas', value: row.outflows, color: '#A855F7' },
+              { key: 'faturas', label: 'Faturas', value: row.invoices, color: '#0052FF' },
+              { key: 'dividas', label: 'Dívidas', value: row.debts, color: '#E88D5D' },
+              { key: 'sobra', label: 'Sobra', value: Math.max(0, row.margin), color: '#10B981' },
             ]}
           />
         )}
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   strong: { fontSize: 17, fontWeight: '600', color: COLORS.text },
   detail: { fontSize: 14, color: COLORS.placeholder },
   detailStrong: { fontWeight: '600', color: COLORS.text },
-  negative: { color: '#ff8a80', fontWeight: '600' },
+  negative: { color: '#B4532A', fontWeight: '600' },
   task: { gap: 6, paddingVertical: 6 },
   taskButtons: { flexDirection: 'row', gap: 10 },
   flex: { flex: 1 },

@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
 import { COLORS } from '../components/form';
+import { FONTS } from '../components/theme';
 import { Reminders } from '../notifications/Reminders';
 import { BancosStack } from './BancosStack';
 import { FluxoStack } from './FluxoStack';
@@ -33,9 +34,10 @@ export function RootTabs() {
           headerShown: false,
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.placeholder,
+          tabBarLabelStyle: { fontFamily: FONTS.body[500] },
           // Frosted bar over the backdrop.
-          tabBarStyle: { backgroundColor: 'rgba(8,18,20,0.55)', borderTopColor: COLORS.hairline },
-          tabBarBackground: () => <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />,
+          tabBarStyle: { backgroundColor: 'rgba(249,250,252,0.72)', borderTopColor: COLORS.hairline },
+          tabBarBackground: () => <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />,
           tabBarIcon: ({ focused, color, size }) => <Ionicons name={ICONS[route.name][focused ? 1 : 0]} color={color} size={size} />,
         })}
       >

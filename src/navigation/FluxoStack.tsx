@@ -1,3 +1,4 @@
+import { STACK_OPTIONS } from '../components/theme';
 import { Pressable } from 'react-native';
 import { Text } from '../components/Text';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -10,7 +11,7 @@ const Stack = createNativeStackNavigator<FluxoStackParamList>();
 
 export function FluxoStack() {
   return (
-    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
+    <Stack.Navigator screenOptions={STACK_OPTIONS}>
       <Stack.Screen
         name="FluxoHome"
         component={FluxoScreen}
@@ -18,7 +19,7 @@ export function FluxoStack() {
           title: 'Fluxo de caixa',
           headerRight: () => (
             <Pressable onPress={() => navigation.navigate('Lancamentos')} accessibilityRole="button" hitSlop={14}>
-              <Text style={{ fontSize: 16, color: '#5fd4a0' }}>Lançamentos</Text>
+              <Text style={{ fontSize: 16, color: '#0052FF' }}>Lançamentos</Text>
             </Pressable>
           ),
         })}
