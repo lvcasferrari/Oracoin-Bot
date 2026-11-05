@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { monthOf, param, type Card, type Category } from '../../engine';
 import { replaceCardInstallments, saveAccount, saveCard, saveEntry, saveInvoice, setBalanceDate } from '../../db/repos';
-import { BankPicker, Button, Chips, DayInput, FormError, Input, MoneyInput, trySave, useBusy } from '../../components/form';
+import { BankPicker, Button, Chips, DayInput, FormError, Input, MoneyInput, More, trySave, useBusy } from '../../components/form';
 import { Money } from '../../components/ui';
 import { formatMonthBR } from '../../lib/dateInput';
 import { newId } from '../../lib/id';
@@ -12,7 +12,7 @@ import { gridMonths, gridValues, InstallmentsGrid } from '../forms/InstallmentsF
 import { accountFromDraft, cardFromDraft, entryFromDraft, installmentsFromGrid, MSG } from '../forms/mappers';
 import { defaultVariableEstimate, nextDueMonth, onboardingInvoice } from './logic';
 
-const SKIP = 'Pular por agora';
+const SKIP = 'Pular este passo';
 
 /** Step 1: net income, pay day, and (optionally) today's balance. */
 export function IncomeStep({ onDone }: { onDone: () => void }) {
@@ -54,7 +54,9 @@ export function IncomeStep({ onDone }: { onDone: () => void }) {
       <Text style={styles.privacy}>Seus dados ficam só neste aparelho. Nada é enviado para servidores, e você pode apagar tudo em Plano.</Text>
       <MoneyInput label="Quanto cai na conta por mês (líquido)" value={income} onChangeText={setIncome} error={errors.amount} autoFocus />
       <DayInput label="Dia em que cai" value={day} onChangeText={setDay} error={errors.day} />
-      <BankPicker value={bank} onChange={setBank} />
+      <More label="Informar o banco">
+        <BankPicker value={bank} onChange={setBank} />
+      </More>
       <MoneyInput label="Quanto tem na conta hoje? (opcional)" value={balance} onChangeText={setBalance} error={errors.balance} hint="Sem isso, o app começa do zero." />
       <FormError message={error} />
       <Button title="Continuar" onPress={next} disabled={busy} />
