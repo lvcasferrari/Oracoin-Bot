@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { debtViews, monthlyCost, monthlySummary, param, strategyReserve } from '../../engine';
 import { Disclaimer } from '../../components/Disclaimer';
 import { Button, COLORS } from '../../components/form';
-import { Card, Money, Pill } from '../../components/ui';
+import { Card, HBars, Money, Pill } from '../../components/ui';
 import { formatBRL } from '../../lib/money';
 import type { PlanoStackParamList, TabParamList } from '../../navigation/types';
 import { useReadyData } from '../../state/AppData';
@@ -40,6 +40,24 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
         </View>
       </Card>
 
+      {views.some((v) => v.monthlyReturn !== null) && (
+        <Card>
+          <Text style={styles.label} accessibilityRole="header">
+            Quanto rende quitar, ao mês
+          </Text>
+          <HBars
+            rows={views
+              .filter((v) => v.monthlyReturn !== null)
+              .map((v) => ({ key: v.debt.id, label: v.debt.name, value: v.monthlyReturn as number, tone: v.reading === 'custa_mais_que_credito' ? ('warn' as const) : undefined }))}
+            markers={[
+              ...(ctx.bridgeRate !== undefined ? [{ label: 'Crédito informado', value: ctx.bridgeRate }] : []),
+              { label: 'Rendimento do caixa', value: ctx.cashYield },
+            ]}
+            format={pct}
+          />
+        </Card>
+      )}
+
       <Card>
         <Text style={styles.label} accessibilityRole="header">
           Suas dívidas
@@ -63,7 +81,6 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
               </View>
               <Text style={styles.meta}>{v.payoffAmount === null ? 'Não permite quitar antes' : v.quoted ? 'Valor cotado' : 'Valor estimado'}</Text>
               {reading && <Pill tone={reading.tone}>{reading.label}</Pill>}
-              <Text style={styles.why}>{debtWhy(v, ctx)}</Text>
             </Pressable>
           );
         })}
