@@ -64,6 +64,8 @@ describe('form mappers', () => {
     expect(!low.ok && Object.keys(low.errors)).toEqual(['installment']);
     const neither = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote });
     expect(!neither.ok && Object.keys(neither.errors)).toEqual(['ratePct']);
+    const typedBad = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: 'abc', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote, installment: '598,39' });
+    expect(!typedBad.ok && Object.keys(typedBad.errors)).toEqual(['ratePct']);
   });
   it('reads a payoff quote (amount or discount, never both) and clears it when removed', () => {
     const base = { id: 'd', name: 'Carro', kind: 'financiamento' as const, principal: '12.000', ratePct: '1,49', months: '24', system: 'price' as const, startMonth: '12/2026', dueDay: '15' };

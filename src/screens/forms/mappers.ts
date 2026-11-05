@@ -121,14 +121,19 @@ export function debtFromDraft(d: DebtDraft): Result<Debt> {
   const principal = money(errors, 'principal', d.principal, { required: true, positive: true });
   const months = /^\s*\d+\s*$/.test(d.months) ? Number(d.months) : NaN;
   if (!(months >= 1 && months <= 600)) errors.months = MSG.months;
-  let ratePct = d.ratePct.trim() === '' ? null : parseBRL(d.ratePct);
-  if (ratePct === null && d.installment.trim() !== '') {
+  let ratePct: number | null = null;
+  if (d.ratePct.trim() !== '') {
+    ratePct = parseBRL(d.ratePct);
+    if (ratePct === null || ratePct < 0 || ratePct > 100) errors.ratePct = MSG.rate;
+  } else if (d.installment.trim() === '') {
+    errors.ratePct = 'Informe o valor da parcela (ou os juros ao mês).';
+  } else {
+    // Derived rate: errors go on the installment, the field the user actually filled.
     const installment = money(errors, 'installment', d.installment, { positive: true });
     const monthly = installment !== undefined && principal !== undefined && months >= 1 ? effectiveLoanRate(principal, installment, months).monthly : null;
-    if (monthly !== null && monthly >= 0) ratePct = Math.round(monthly * 1e6) / 1e4;
+    if (monthly !== null && monthly >= 0 && monthly <= 1) ratePct = Math.round(monthly * 1e6) / 1e4;
     else if (!errors.installment && principal !== undefined && months >= 1) errors.installment = 'Com essa parcela não fecha a conta. Confira o saldo, a parcela e quantas faltam.';
-  } else if (ratePct === null || ratePct > 100) errors.ratePct = d.installment.trim() === '' && d.ratePct.trim() === '' ? 'Informe o valor da parcela (ou os juros ao mês).' : MSG.rate;
-  if (ratePct !== null && ratePct > 100) errors.ratePct = MSG.rate;
+  }
   const startMonth = parseMonthBR(d.startMonth);
   if (!startMonth) errors.startMonth = MSG.month;
   const dueDay = day(errors, 'dueDay', d.dueDay);

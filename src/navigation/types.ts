@@ -22,6 +22,8 @@ export type HojeStackParamList = {
   HojeHome: undefined;
   ConfirmInvoice: InvoiceRouteParams;
   PayInvoice: InvoiceRouteParams;
+  /** Quick add, hosted here so saving returns to Hoje. */
+  EntryForm: FluxoStackParamList['EntryForm'];
 };
 
 export type FluxoStackParamList = {

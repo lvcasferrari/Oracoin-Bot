@@ -179,7 +179,7 @@ export function FormError({ message }: { message?: string }) {
 export function More({ children, open, label = 'Mais opções' }: { children: ReactNode; open?: boolean; label?: string }) {
   const [shown, setShown] = useState(false);
   if (shown || open) return <>{children}</>;
-  return <Button title={label} kind="secondary" onPress={() => setShown(true)} />;
+  return <Button title={label} kind="secondary" accessibilityLabel={`${label}, recolhido`} onPress={() => setShown(true)} />;
 }
 
 export const SAVE_ERROR = 'Não consegui salvar. Seus dados anteriores continuam guardados. Tente de novo.';

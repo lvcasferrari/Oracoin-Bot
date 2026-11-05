@@ -75,7 +75,7 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
       <Button
         title="+ Lançar gasto ou entrada"
         kind="secondary"
-        onPress={() => navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Fluxo', { screen: 'EntryForm', params: { kind: 'out', once: true }, initial: false })}
+        onPress={() => navigation.navigate('EntryForm', { kind: 'out', once: true })}
       />
 
       {next && balanceOnDue !== null && (

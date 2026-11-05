@@ -87,7 +87,7 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
         <CardsStep
           added={cards}
           onAdded={(card) => setCards((cs) => [...cs.filter((c) => c.id !== card.id), card])}
-          onDone={() => setStep(cards.length > 0 ? 2 : 3)}
+          onDone={(count) => setStep(count > 0 ? 2 : 3)}
         />
       )}
       {step === 2 && <InstallmentsStep cards={cards} onDone={() => setStep(3)} />}
