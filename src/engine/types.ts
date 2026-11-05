@@ -160,6 +160,16 @@ export interface Bridge {
   source: string;
 }
 
+/** Something the user actually paid (Histórico). Invoices use the card id as refId and the due month. */
+export interface Payment {
+  id: string;
+  refType: 'debt' | 'invoice' | 'bridge';
+  refId: string;
+  month: string;
+  paidOn: string;
+  amount: number;
+}
+
 export interface Scenario {
   id: string;
   name: string;

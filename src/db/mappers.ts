@@ -1,6 +1,6 @@
 // Money is INTEGER cents in SQLite and reais in the engine; this is the only place that converts.
 // Exception: scenarios.changes_json keeps the engine's reais, because it is only read back by the engine.
-import type { Account, Bridge, Card, Debt, Entry, Goal, Installment, Invoice, Parameter, Scenario } from '../engine';
+import type { Account, Bridge, Card, Payment, Debt, Entry, Goal, Installment, Invoice, Parameter, Scenario } from '../engine';
 import type { SqlParam } from './driver';
 
 export function toCents(reais: number): number {
@@ -110,3 +110,9 @@ export const parameterToParams = (p: Parameter): SqlParam[] => {
 export interface ScenarioRow { id: string; name: string; changes_json: string }
 export const scenarioFromRow = (r: ScenarioRow): Scenario => ({ id: r.id, name: r.name, changes: JSON.parse(r.changes_json) });
 export const scenarioToParams = (s: Scenario): SqlParam[] => [s.id, s.name, JSON.stringify(s.changes)];
+
+export interface PaymentRow { id: string; ref_type: Payment['refType']; ref_id: string; month: string; paid_on: string; amount_cents: number }
+export const paymentFromRow = (r: PaymentRow): Payment => ({
+  id: r.id, refType: r.ref_type, refId: r.ref_id, month: r.month, paidOn: r.paid_on, amount: fromCents(r.amount_cents),
+});
+export const paymentToParams = (p: Payment): SqlParam[] => [p.id, p.refType, p.refId, p.month, p.paidOn, toCents(p.amount)];

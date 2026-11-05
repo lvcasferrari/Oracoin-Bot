@@ -18,7 +18,7 @@ const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       Tabs: {
         screens: {
-          Plano: { screens: { PlanoHome: 'plano', Quitacao: 'plano/quitacao', Estrategias: 'plano/estrategias', Roteiro: 'plano/roteiro' } },
+          Plano: { screens: { PlanoHome: 'plano', Quitacao: 'plano/quitacao', Estrategias: 'plano/estrategias', Roteiro: 'plano/roteiro', Historico: 'plano/historico' } },
         },
       },
     },

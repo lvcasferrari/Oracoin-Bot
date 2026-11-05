@@ -3,7 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { cents, param, projectedInvoice, suggestActions, worstCase, type Invoice } from '../../engine';
-import { saveInvoice } from '../../db/repos';
+import { saveInvoice, savePayment } from '../../db/repos';
+import { paymentId } from '../../engine';
 import { ActionsList } from '../../components/ActionsList';
 import { Disclaimer } from '../../components/Disclaimer';
 import { Button, Chips, FormError, FormScreen, Input, MoneyInput } from '../../components/form';
@@ -114,7 +115,18 @@ export function PayInvoiceScreen({ route, navigation }: NativeStackScreenProps<{
         onPress={() =>
           f.submit(async (invoice) => {
             // The day of payment lets the forecast stop counting it once the balance is updated.
-            await saveInvoice(db, { ...invoice, paidOn: today });
+            // The payment also feeds Histórico; both rows or neither.
+            await db.transaction(async (tx) => {
+              await saveInvoice(tx, { ...invoice, paidOn: today });
+              await savePayment(tx, {
+                id: paymentId('invoice', invoice.cardId, invoice.dueMonth),
+                refType: 'invoice',
+                refId: invoice.cardId,
+                month: invoice.dueMonth,
+                paidOn: today,
+                amount: invoice.paidAmount ?? invoice.amount,
+              });
+            });
             await refresh();
             if (invoice.status === 'paga') setPaidInFull(true);
             else navigation.goBack();

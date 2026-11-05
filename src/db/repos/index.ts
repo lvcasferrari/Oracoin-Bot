@@ -5,6 +5,7 @@ export * from './installments';
 export * from './invoices';
 export * from './debts';
 export * from './bridges';
+export * from './payments';
 export * from './goals';
 export * from './parameters';
 export * from './scenarios';
