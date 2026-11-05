@@ -98,10 +98,17 @@ INSERT INTO parameters (key, effective_from, value, source) VALUES
   ('rendimento_caixa_mensal', '2026-10-26', 0.009, 'suposição do app; troque pelo rendimento da sua conta');
 `;
 
+// v4 (last mile): opt-in invoice reminders, and the "complete depois" card dismissed on Hoje.
+const V4 = `
+ALTER TABLE profile ADD COLUMN reminders INTEGER NOT NULL DEFAULT 0 CHECK (reminders IN (0, 1));
+ALTER TABLE profile ADD COLUMN later_dismissed INTEGER NOT NULL DEFAULT 0 CHECK (later_dismissed IN (0, 1));
+`;
+
 export const MIGRATIONS: Migration[] = [
   { version: 1, sql: V1 },
   { version: 2, sql: V2 },
   { version: 3, sql: V3 },
+  { version: 4, sql: V4 },
 ];
 
 /** Applies the missing migrations, each with its `user_version` bump in one transaction. */
