@@ -1,26 +1,30 @@
-import { ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthlySummary, monthOf, profileBalance, suggestActions } from '../engine';
+import { buildEvents, cashProjection, freeMargin, monthlySummary, monthOf, pendingUpkeep, profileBalance, suggestActions } from '../engine';
 import { ActionsList } from '../components/ActionsList';
 import { Disclaimer } from '../components/Disclaimer';
 import { EmptyState } from '../components/EmptyState';
-import { Button, COLORS } from '../components/form';
+import { announce, Button, COLORS, FormError, trySave, useBusy } from '../components/form';
 import { BarChart, Money, Card, Pill, StackBar } from '../components/ui';
 import { formatDateBR } from '../lib/dateInput';
 import type { HojeStackParamList, TabParamList } from '../navigation/types';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
+import { confirmAtEstimate, markPaidInFull } from './upkeep/quick';
 
 export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParamList, 'HojeHome'>) {
-  const { profile, today } = useReadyData();
+  const { db, profile, today, refresh } = useReadyData();
+  const [busy, run] = useBusy();
+  const [error, setError] = useState<string>();
   if (isEmptyProfile(profile)) return <EmptyState />;
 
   const month = monthOf(today);
   const events = buildEvents(profile, today);
   const points = cashProjection(profileBalance(profile), events);
   const margin = freeMargin(profile, month, today);
-  const toConfirm = invoicesToConfirm(profile, today);
+  const tasks = pendingUpkeep(profile, today);
   const row = monthlySummary(profile, today)[0];
 
   // Lowest balance this month, measured on the full projection (balance after each event).
@@ -45,15 +49,42 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
 
   return (
     <ScrollView contentContainerStyle={styles.page}>
-      {toConfirm.map((t) => (
-        <Card key={`${t.card.id}-${t.dueMonth}`}>
-          <Text style={styles.strong}>Fatura {t.card.bank} fechou</Text>
-          <Text style={styles.detail}>
-            Estimado <Money value={t.estimate} /> · vence {formatDateBR(t.dueDate)}
-          </Text>
-          <Button title="Confirmar valor" onPress={() => navigation.navigate('ConfirmInvoice', { cardId: t.card.id, dueMonth: t.dueMonth })} />
+      {tasks.length > 0 && (
+        <Card>
+          <Text style={styles.label} accessibilityRole="header">Pendências</Text>
+          {tasks.map((t) => {
+            const name = `Fatura ${t.card.bank}`;
+            const answer = (action: typeof confirmAtEstimate, done: string) =>
+              run(async () => {
+                if (await trySave(async () => { await action(db, profile, t.card.id, t.dueMonth, today); await refresh(); }, setError)) announce(done);
+              });
+            return (
+              <View key={`${t.kind}-${t.card.id}-${t.dueMonth}`} style={styles.task}>
+                <Text style={styles.strong}>{t.kind === 'confirm' ? `${name} fechou` : t.dueDate === today ? `${name} vence hoje` : `${name} venceu ${formatDateBR(t.dueDate)}`}</Text>
+                <Text style={styles.detail}>
+                  {t.kind === 'confirm' ? 'Veio ' : 'Pagou '}
+                  <Money value={t.amount} style={styles.detailStrong} />?
+                </Text>
+                <View style={styles.taskButtons}>
+                  {t.kind === 'confirm' ? (
+                    <>
+                      <View style={styles.flex}><Button title="Sim, veio isso" disabled={busy} onPress={() => answer(confirmAtEstimate, `${name} confirmada.`)} /></View>
+                      <View style={styles.flex}><Button title="Ajustar" kind="secondary" disabled={busy} onPress={() => navigation.navigate('ConfirmInvoice', { cardId: t.card.id, dueMonth: t.dueMonth })} /></View>
+                    </>
+                  ) : (
+                    <>
+                      <View style={styles.flex}><Button title="Paguei tudo" disabled={busy} onPress={() => answer(markPaidInFull, `${name} paga.`)} /></View>
+                      <View style={styles.flex}><Button title="Outro valor" kind="secondary" disabled={busy} onPress={() => navigation.navigate('PayInvoice', { cardId: t.card.id, dueMonth: t.dueMonth })} /></View>
+                    </>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+          <FormError message={error} />
+          <Text style={styles.detail}>Se não responder, o app segue com o valor estimado e considera a fatura paga no vencimento.</Text>
         </Card>
-      ))}
+      )}
 
       <Card>
         <Text style={styles.label}>Margem livre do mês</Text>
@@ -135,4 +166,7 @@ const styles = StyleSheet.create({
   detail: { fontSize: 14, color: COLORS.placeholder },
   detailStrong: { fontWeight: '600', color: COLORS.text },
   negative: { color: '#ff8a80', fontWeight: '600' },
+  task: { gap: 6, paddingVertical: 6 },
+  taskButtons: { flexDirection: 'row', gap: 10 },
+  flex: { flex: 1 },
 });
