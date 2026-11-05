@@ -15,4 +15,5 @@ export * from './scenarios';
 export * from './actions';
 export * from './quitacao';
 export * from './strategies';
+export * from './history';
 export * from './simulator';

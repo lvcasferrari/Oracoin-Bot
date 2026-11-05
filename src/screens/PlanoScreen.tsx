@@ -144,6 +144,7 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
             : 'Quanto rende quitar cada dívida agora e quais combinações deixam o custo mensal menor, com os números que você informou.'}
         </Text>
         <Button title="Ver quitação" kind="secondary" onPress={() => navigation.navigate('Quitacao')} />
+        <Button title="Histórico do que foi pago" kind="secondary" onPress={() => navigation.navigate('Historico')} />
       </Card>
 
       <Card>

@@ -253,3 +253,16 @@ describe('mappers', () => {
     expect(() => toCents(2e9)).toThrow(RangeError);
   });
 });
+
+describe('payments (v3)', () => {
+  it('upserts by id and removes', async () => {
+    const { listPayments, removePayment, savePayment } = await import('./repos');
+    const db = await fresh();
+    const p = { id: 'pay-debt-car-2026-10', refType: 'debt' as const, refId: 'car', month: '2026-10', paidOn: '2026-10-20', amount: 200.5 };
+    await savePayment(db, p);
+    await savePayment(db, { ...p, amount: 210 });
+    expect(await listPayments(db)).toEqual([{ ...p, amount: 210 }]);
+    await removePayment(db, p.id);
+    expect(await listPayments(db)).toEqual([]);
+  });
+});

@@ -52,5 +52,6 @@ export type PlanoStackParamList = {
   Quitacao: undefined;
   Estrategias: undefined;
   Roteiro: { preview?: boolean } | undefined;
+  Historico: undefined;
   Import: undefined;
 };
