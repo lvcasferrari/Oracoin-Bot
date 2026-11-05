@@ -10,7 +10,7 @@ import { useReadyData } from '../../state/AppData';
 import { raioXInsight } from './logic';
 
 /** "Raio-X do seu próximo mês": margin, due-date calendar, critical day and one insight (spec 07). */
-export function RaioX({ onFinish }: { onFinish: () => void }) {
+export function RaioX({ onFinish, busy }: { onFinish: (remind: boolean) => void; busy?: boolean }) {
   const { profile, today } = useReadyData();
   const month = addMonths(monthOf(today), 1);
   const margin = freeMargin(profile, month, today);
@@ -44,7 +44,11 @@ export function RaioX({ onFinish }: { onFinish: () => void }) {
         </Card>
       )}
       <Disclaimer />
-      <Button title="Ir para o app" onPress={onFinish} />
+      <Card>
+        <Text style={styles.body}>Quer um aviso quando a fatura fechar e quando vencer? Você responde com um toque, sem digitar nada.</Text>
+      </Card>
+      <Button title="Me avise e ir para o app" onPress={() => onFinish(true)} disabled={busy} />
+      <Button title="Ir para o app sem avisos" kind="secondary" onPress={() => onFinish(false)} disabled={busy} />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Text } from '../components/Text';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NavigationProp, ParamListBase } from '@react-navigation/native';
@@ -16,7 +16,8 @@ import {
   type Parameter,
   type ScorePart,
 } from '../engine';
-import { listScoreHistory, saveScoreSnapshot, type ScoreSnapshot } from '../db/repos';
+import { listScoreHistory, saveScoreSnapshot, setReminders, type ScoreSnapshot } from '../db/repos';
+import { askReminderPermission } from '../notifications/Reminders';
 import { resetAll } from '../db/reset';
 import { Disclaimer } from '../components/Disclaimer';
 import { Button, COLORS, FormError, trySave, useBusy } from '../components/form';
@@ -137,6 +138,7 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
           onPress={() => navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Fluxo', { screen: 'Lancamentos', initial: false })}
         />
         <ListRow icon="document-attach-outline" label="Importar planilha" onPress={() => navigation.navigate('Import')} />
+        <RemindersRow />
         <ListRow icon="lock-closed-outline" label="Privacidade e dados" onPress={() => navigation.navigate('Dados')} />
       </Card>
       <Disclaimer />
@@ -221,3 +223,31 @@ const styles = StyleSheet.create({
   paramValue: { fontSize: 14, fontWeight: '600' },
   input: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: '#eef3f1' },
 });
+
+/** One tap turns invoice reminders on or off; when the system blocks them, the tap opens the iPhone Settings. */
+function RemindersRow() {
+  const { db, meta, refresh } = useReadyData();
+  const [blocked, setBlocked] = useState(false);
+  const [error, setError] = useState<string>();
+  const [busy, run] = useBusy();
+  const toggle = () =>
+    run(async () => {
+      if (blocked) return void Linking.openSettings();
+      const on = !meta.reminders && (await askReminderPermission().catch(() => false));
+      if (!meta.reminders && !on) setBlocked(true);
+      if (await trySave(() => setReminders(db, on).then(() => undefined), setError)) await refresh();
+    });
+  return (
+    <>
+      <ListRow
+        icon="notifications-outline"
+        label="Avisos de fatura"
+        detail={blocked ? 'Bloqueados nos Ajustes do iPhone. Toque para abrir.' : 'Quando a fatura fecha e quando vence.'}
+        value={meta.reminders ? 'Ligados' : 'Desligados'}
+        onPress={busy ? undefined : toggle}
+        hint={meta.reminders ? 'Desliga os avisos' : 'Liga os avisos'}
+      />
+      <FormError message={error} />
+    </>
+  );
+}

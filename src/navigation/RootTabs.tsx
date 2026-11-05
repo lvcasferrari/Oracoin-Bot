@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
 import { COLORS } from '../components/form';
+import { Reminders } from '../notifications/Reminders';
 import { BancosStack } from './BancosStack';
 import { FluxoStack } from './FluxoStack';
 import { HojeStack } from './HojeStack';
@@ -25,22 +26,25 @@ const ICONS: Record<keyof TabParamList, [IconName, IconName]> = {
 
 export function RootTabs() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.placeholder,
-        // Frosted bar over the backdrop.
-        tabBarStyle: { backgroundColor: 'rgba(8,18,20,0.55)', borderTopColor: COLORS.hairline },
-        tabBarBackground: () => <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />,
-        tabBarIcon: ({ focused, color, size }) => <Ionicons name={ICONS[route.name][focused ? 1 : 0]} color={color} size={size} />,
-      })}
-    >
-      <Tab.Screen name="Hoje" component={HojeStack} />
-      <Tab.Screen name="Fluxo" component={FluxoStack} />
-      <Tab.Screen name="E se…?" component={SimularStack} />
-      <Tab.Screen name="Bancos" component={BancosStack} />
-      <Tab.Screen name="Plano" component={PlanoStack} />
-    </Tab.Navigator>
+    <>
+      <Reminders />
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarActiveTintColor: COLORS.primary,
+          tabBarInactiveTintColor: COLORS.placeholder,
+          // Frosted bar over the backdrop.
+          tabBarStyle: { backgroundColor: 'rgba(8,18,20,0.55)', borderTopColor: COLORS.hairline },
+          tabBarBackground: () => <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />,
+          tabBarIcon: ({ focused, color, size }) => <Ionicons name={ICONS[route.name][focused ? 1 : 0]} color={color} size={size} />,
+        })}
+      >
+        <Tab.Screen name="Hoje" component={HojeStack} />
+        <Tab.Screen name="Fluxo" component={FluxoStack} />
+        <Tab.Screen name="E se…?" component={SimularStack} />
+        <Tab.Screen name="Bancos" component={BancosStack} />
+        <Tab.Screen name="Plano" component={PlanoStack} />
+      </Tab.Navigator>
+    </>
   );
 }

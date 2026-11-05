@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { setOnboarded } from '../../db/repos';
+import { setOnboarded, setReminders } from '../../db/repos';
+import { askReminderPermission } from '../../notifications/Reminders';
 import { Button, FormError, FormScreen, trySave, useAnnounce, useBusy } from '../../components/form';
 import type { RootStackParamList } from '../../navigation/types';
 import { useReadyData } from '../../state/AppData';
@@ -44,9 +45,15 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
     setStep(4);
   };
 
-  const finish = () =>
+  const finish = (remind: boolean) =>
     run(async () => {
-      if (!(await trySave(() => setOnboarded(db, today, seconds).then(() => undefined), setError))) return;
+      // The system prompt comes right after the user asked for reminders, never on first launch.
+      const granted = remind && (await askReminderPermission().catch(() => false));
+      const saved = await trySave(async () => {
+        await setOnboarded(db, today, seconds);
+        await setReminders(db, granted);
+      }, setError);
+      if (!saved) return;
       await refresh();
       toTabs();
     });
@@ -99,7 +106,7 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
       )}
       {step === 2 && <InstallmentsStep cards={cards} onDone={() => setStep(3)} />}
       {step === 3 && <FixedStep onDone={toRaioX} />}
-      {step === 4 && <RaioX onFinish={finish} />}
+      {step === 4 && <RaioX onFinish={finish} busy={busy} />}
 
       <FormError message={error} />
     </FormScreen>
