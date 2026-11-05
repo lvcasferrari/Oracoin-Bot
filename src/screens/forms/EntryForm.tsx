@@ -24,8 +24,8 @@ const RECURRENCES = [
 const CATEGORIES = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value: value as Category, label }));
 const ACCOUNT = '__conta__';
 
-export function EntryForm({ initial, defaultKind = 'out', today, cards, onSubmit, submitLabel = 'Salvar' }: {
-  initial?: Entry; defaultKind?: Entry['kind']; today: string; cards: Card[]; onSubmit: (entry: Entry) => Promise<void>; submitLabel?: string;
+export function EntryForm({ initial, defaultKind = 'out', once, today, cards, onSubmit, submitLabel = 'Salvar' }: {
+  initial?: Entry; defaultKind?: Entry['kind']; once?: boolean; today: string; cards: Card[]; onSubmit: (entry: Entry) => Promise<void>; submitLabel?: string;
 }) {
   const f = useForm<EntryDraft, Entry>(
     () => ({
@@ -33,11 +33,11 @@ export function EntryForm({ initial, defaultKind = 'out', today, cards, onSubmit
       kind: initial?.kind ?? defaultKind,
       name: initial?.name ?? '',
       amount: toInput(initial?.amount),
-      recurrence: initial?.recurrence ?? 'monthly',
+      recurrence: initial?.recurrence ?? (once ? 'once' : 'monthly'),
       day: initial ? String(initial.day) : '',
       startMonth: formatMonthBR(initial?.startMonth ?? monthOf(today)),
       endMonth: initial?.endMonth ? formatMonthBR(initial.endMonth) : '',
-      date: initial?.date ? formatDateBR(initial.date) : '',
+      date: initial?.date ? formatDateBR(initial.date) : once ? formatDateBR(today) : '',
       cardId: initial?.cardId,
       category: initial?.category,
       accountId: initial?.accountId,
@@ -100,6 +100,7 @@ export function EntryFormScreen({ route, navigation }: NativeStackScreenProps<Fl
       <EntryForm
         initial={initial}
         defaultKind={route.params?.kind}
+        once={route.params?.once}
         today={today}
         cards={profile.cards}
         onSubmit={async (entry) => {
