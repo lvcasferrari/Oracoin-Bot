@@ -8,7 +8,7 @@ export const SAMPLE_SHEETS: Sheets = {
   'Leia-me': [
     ['Modelo de planilha do Life Strategic Plan (dados fictícios)'],
     ['Preencha uma cópia com os seus valores. Valores em reais (1.234,56 ou 1234.56); meses como mm/aaaa; dias de 1 a 31.'],
-    ['Abas lidas pelo app: Painel, Contas, Cartões, Parcelas, Hipoteca, Empréstimo, Financiamento, Cenários. Esta aba é ignorada.'],
+    ['Abas lidas pelo app: Painel, Contas, Cartões, Parcelas, Hipoteca, Empréstimo, Financiamento, Pontes, Cenários. Esta aba é ignorada.'],
     ['Na aba Painel, "Repete" aceita Mensal, Anual ou Única (para Única, o dia e o mês de Início formam a data).'],
     ['Na coluna "Cartão", escreva o banco e o apelido como na aba Cartões (ex.: Nubank Roxinho). Vazio = sai da conta.'],
   ],
@@ -44,16 +44,22 @@ export const SAMPLE_SHEETS: Sheets = {
     ['Itaú Platinum', '12/2026', 320],
   ],
   Hipoteca: [
-    ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento'],
+    ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento', 'Valor para quitar', 'Desconto (% a.a.)', 'Cotado em'],
     ['Apartamento', 280000, '0,85', 300, 'SAC', '12/2026', 10],
   ],
   Empréstimo: [
-    ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento'],
-    ['Empréstimo pessoal', 6000, '2,9', 14, 'Price', '12/2026', 20],
+    ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento', 'Valor para quitar', 'Desconto (% a.a.)', 'Cotado em'],
+    ['Empréstimo pessoal', 6000, '2,9', 14, 'Price', '12/2026', 20, '', '5,5', '01/11/2026'],
   ],
   Financiamento: [
-    ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento'],
-    ['Carro', 32000, '1,49', 36, 'Price', '12/2026', 15],
+    ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento', 'Valor para quitar', 'Desconto (% a.a.)', 'Cotado em'],
+    ['Carro', 32000, '1,49', 36, 'Price', '12/2026', 15, 30500, '', '01/11/2026'],
+  ],
+  Pontes: [
+    ['Nome', 'Tipo', 'Juros a.m. (%)', 'Prazo', 'Fonte'],
+    ['Proposta do banco', 'Empréstimo', '3,2', 12, 'simulação no app do banco'],
+    ['Taxa que eu busco', 'Meta', '1,8', 12, 'meta pessoal'],
+    ['Parcelar a fatura', 'Parcelar fatura', '', 6, 'premissas do app'],
   ],
   Cenários: [
     ['Nome', 'Tipo', 'Valor', 'Parcelas', 'Cartão', 'Dia', 'Meses', 'Início'],

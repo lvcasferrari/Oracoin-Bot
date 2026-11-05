@@ -1,8 +1,8 @@
 // Pure: spreadsheet rows → repository rows, with a warning for everything that is not used.
 // Nothing is dropped silently (plan step 14).
-import { cents, dateInMonth, monthOf, type Account, type Card, type Category, type Debt, type Entry, type Installment, type Profile, type Scenario, type ScenarioChange } from '../engine';
+import { cents, dateInMonth, monthOf, param, type Account, type Bridge, type Card, type Category, type Debt, type Entry, type Installment, type Profile, type Scenario, type ScenarioChange } from '../engine';
 import { CATEGORY_LABELS } from '../lib/banks';
-import { parseMonthBR } from '../lib/dateInput';
+import { parseDateBR, parseMonthBR } from '../lib/dateInput';
 import { parseBRL } from '../lib/money';
 import type { Cell, Sheets } from './sampleWorkbook';
 
@@ -18,6 +18,7 @@ export interface ImportPreview {
   entries: Row<Entry>[];
   installments: Row<Installment>[];
   debts: Row<Debt>[];
+  bridges: Row<Bridge>[];
   scenarios: Row<Scenario>[];
   warnings: string[];
 }
@@ -40,6 +41,7 @@ const TABS = {
   emprestimo: ['emprestimo', 'emprestimos'],
   financiamento: ['financiamento', 'financiamentos'],
   cenarios: ['cenarios'],
+  pontes: ['pontes', 'credito ponte'],
   ignored: ['leia-me', 'leia me', 'instrucoes'],
 } as const;
 type Tab = keyof typeof TABS;
@@ -52,6 +54,7 @@ const COLUMNS: Record<Exclude<Tab, 'ignored'>, Record<string, string[]>> = {
   hipoteca: DEBT_COLUMNS(),
   emprestimo: DEBT_COLUMNS(),
   financiamento: DEBT_COLUMNS(),
+  pontes: { nome: ['nome'], tipo: ['tipo'], juros: ['juros a.m. (%)', 'juros a.m.', 'juros (%)', 'juros'], prazo: ['prazo', 'meses', 'parcelas'], fonte: ['fonte'] },
   cenarios: { nome: ['nome'], tipo: ['tipo'], valor: ['valor'], parcelas: ['parcelas'], cartao: ['cartao'], dia: ['dia'], meses: ['meses'], inicio: ['inicio'] },
 };
 
@@ -64,6 +67,9 @@ function DEBT_COLUMNS(): Record<string, string[]> {
     sistema: ['sistema'],
     proxima: ['proxima parcela', 'inicio'],
     vencimento: ['vencimento', 'dia'],
+    quitar: ['valor para quitar', 'quitacao'],
+    desconto: ['desconto (% a.a.)', 'desconto a.a. (%)', 'desconto'],
+    cotado: ['cotado em', 'cotacao em'],
   };
 }
 
@@ -93,6 +99,14 @@ const percent = (cell: Cell): number | null => {
   const v = money(typeof cell === 'string' ? cell.replace('%', '') : cell);
   return v !== null && v <= 100 ? Math.round(v * 1e4) / 1e6 : null;
 };
+const day = (cell: Cell): string | null => {
+  if (cell instanceof Date && !Number.isNaN(cell.getTime())) {
+    const d = new Date(cell.getTime() + 12 * 3600 * 1000);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  }
+  return parseDateBR(String(cell ?? ''));
+};
+const blank = (cell: Cell) => String(cell ?? '').trim() === '';
 const isEmptyRow = (row: Cell[]) => row.every((c) => String(c ?? '').trim() === '');
 
 const CATEGORY_BY_LABEL: Record<string, Category> = Object.fromEntries(
@@ -103,8 +117,11 @@ const CATEGORY_BY_LABEL: Record<string, Category> = Object.fromEntries(
  * Maps a workbook to repository rows. `existing` is the current profile: matching items reuse
  * their id (so replacing overwrites and references stay valid) and are flagged as duplicates.
  */
-export function mapWorkbook(sheets: Sheets, ctx: { today: string; makeId: (prefix: string) => string; existing: Profile }): ImportPreview {
-  const out: ImportPreview = { accounts: [], cards: [], entries: [], installments: [], debts: [], scenarios: [], warnings: [] };
+export function mapWorkbook(
+  sheets: Sheets,
+  ctx: { today: string; makeId: (prefix: string) => string; existing: Profile; existingBridges?: Bridge[] },
+): ImportPreview {
+  const out: ImportPreview = { accounts: [], cards: [], entries: [], installments: [], debts: [], bridges: [], scenarios: [], warnings: [] };
   const warn = (message: string) => out.warnings.push(message);
   const { existing } = ctx;
 
@@ -247,15 +264,47 @@ export function mapWorkbook(sheets: Sheets, ctx: { today: string; makeId: (prefi
       const system: Debt['system'] | null = systemText === 'sac' ? 'sac' : systemText === 'price' || systemText === '' ? 'price' : null;
       const start = month(r.get('proxima'));
       const dueDay = int(r.get('vencimento'), 1, 31);
-      if (principal === null || principal <= 0) skip(label, r.line, 'saldo devedor inválido');
+      const payoffAmount = blank(r.get('quitar')) ? undefined : money(r.get('quitar'));
+      const discount = blank(r.get('desconto')) ? undefined : percent(r.get('desconto'));
+      const quotedOn = blank(r.get('cotado')) ? undefined : day(r.get('cotado'));
+      if (payoffAmount === null || (payoffAmount !== undefined && payoffAmount <= 0)) skip(label, r.line, 'valor para quitar inválido');
+      else if (discount === null) skip(label, r.line, 'desconto inválido (use % ao ano, ex.: 5,5)');
+      else if (payoffAmount !== undefined && discount !== undefined) skip(label, r.line, 'informe só um: valor para quitar ou desconto');
+      else if (quotedOn === null) skip(label, r.line, 'data da cotação inválida (dd/mm/aaaa)');
+      else if (principal === null || principal <= 0) skip(label, r.line, 'saldo devedor inválido');
       else if (rate === null) skip(label, r.line, 'juros inválidos (use % ao mês, ex.: 1,49)');
       else if (months === null) skip(label, r.line, 'parcelas restantes inválidas');
       else if (!system) skip(label, r.line, 'sistema precisa ser Price ou SAC');
       else if (!start || dueDay === null) skip(label, r.line, 'próxima parcela (mm/aaaa) ou vencimento inválido');
       else {
         const match = existing.debts.find((d) => norm(d.name) === norm(name));
-        out.debts.push({ value: { id: match?.id ?? ctx.makeId('debt'), name, kind, principal, monthlyRate: rate, months, system, startMonth: start, dueDay }, duplicate: Boolean(match) });
+        const quote = { payoffAmount, payoffDiscountAnnual: discount, payoffQuotedOn: quotedOn };
+        out.debts.push({
+          value: { id: match?.id ?? ctx.makeId('debt'), name, kind, principal, monthlyRate: rate, months, system, startMonth: start, dueDay, ...quote },
+          duplicate: Boolean(match),
+        });
       }
+    }
+  }
+
+  // Bridge credit options (Pontes)
+  const BRIDGE_KINDS: Record<string, Bridge['kind']> = {
+    emprestimo: 'emprestimo', credito: 'emprestimo', 'credito cotado': 'emprestimo', meta: 'meta', 'taxa meta': 'meta',
+    'parcelar fatura': 'parcelar_fatura', 'parcelamento da fatura': 'parcelar_fatura',
+  };
+  for (const r of records.pontes ?? []) {
+    const name = String(r.get('nome') ?? '').trim();
+    const kind = BRIDGE_KINDS[norm(r.get('tipo'))];
+    const months = int(r.get('prazo'), 1, 120);
+    const rate = kind === 'parcelar_fatura' ? param(existing.parameters, 'parcelado_fatura_monthly_rate', ctx.today) : percent(r.get('juros'));
+    if (!name) skip('Pontes', r.line, 'falta o nome');
+    else if (!kind) skip('Pontes', r.line, `tipo "${String(r.get('tipo') ?? '')}" não reconhecido (use Empréstimo, Meta ou Parcelar fatura)`);
+    else if (rate === null) skip('Pontes', r.line, 'juros inválidos (use % ao mês, ex.: 3,2)');
+    else if (months === null) skip('Pontes', r.line, 'prazo inválido (1 a 120 meses)');
+    else {
+      const match = ctx.existingBridges?.find((b) => norm(b.name) === norm(name));
+      const source = String(r.get('fonte') ?? '').trim() || 'planilha importada';
+      out.bridges.push({ value: { id: match?.id ?? ctx.makeId('bridge'), name, kind, monthlyRate: rate, months, effectiveFrom: ctx.today, source }, duplicate: Boolean(match) });
     }
   }
 
@@ -312,6 +361,6 @@ export function checkFile(file: { name: string; size?: number }): string | null 
 }
 
 export const countNew = (p: ImportPreview) =>
-  [p.accounts, p.cards, p.entries, p.installments, p.debts, p.scenarios].reduce((s, rows) => s + rows.filter((r) => !r.duplicate).length, 0);
+  [p.accounts, p.cards, p.entries, p.installments, p.debts, p.bridges, p.scenarios].reduce((s, rows) => s + rows.filter((r) => !r.duplicate).length, 0);
 export const countDuplicates = (p: ImportPreview) =>
-  [p.accounts, p.cards, p.entries, p.installments, p.debts, p.scenarios].reduce((s, rows) => s + rows.filter((r) => r.duplicate).length, 0);
+  [p.accounts, p.cards, p.entries, p.installments, p.debts, p.bridges, p.scenarios].reduce((s, rows) => s + rows.filter((r) => r.duplicate).length, 0);

@@ -25,7 +25,7 @@ function summary<T>(label: string, rows: Row<T>[], name: (v: T) => string): stri
 
 /** "Importar planilha" (spec 07): local only, preview first, all or nothing. */
 export function ImportScreen({ navigation }: NativeStackScreenProps<PlanoStackParamList, 'Import'>) {
-  const { db, profile, today, refresh } = useReadyData();
+  const { db, profile, bridges, today, refresh } = useReadyData();
   const [file, setFile] = useState<string>();
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mode, setMode] = useState<DuplicateMode>('skip');
@@ -41,7 +41,7 @@ export function ImportScreen({ navigation }: NativeStackScreenProps<PlanoStackPa
         const picked = await pickWorkbook();
         if (!picked) return;
         setFile(picked.name);
-        setPreview(mapWorkbook(picked.sheets, { today, makeId: newId, existing: profile }));
+        setPreview(mapWorkbook(picked.sheets, { today, makeId: newId, existing: profile, existingBridges: bridges }));
       } catch (e) {
         logError('[Import] pick', e);
         setError(e instanceof ImportFileError ? e.message : 'Não consegui abrir o arquivo. Tente de novo.');
@@ -78,6 +78,7 @@ export function ImportScreen({ navigation }: NativeStackScreenProps<PlanoStackPa
         summary('Entradas e saídas', preview.entries, (e) => e.name),
         summary('Meses de parcelas', preview.installments, (i) => `${i.dueMonth.slice(5)}/${i.dueMonth.slice(0, 4)}`),
         summary('Dívidas', preview.debts, (d) => d.name),
+        summary('Crédito ponte', preview.bridges, (b) => b.name),
         summary('Cenários', preview.scenarios, (s) => s.name),
       ].filter((l): l is string => l !== null)
     : [];

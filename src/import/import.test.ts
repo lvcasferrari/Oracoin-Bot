@@ -42,6 +42,27 @@ describe('mapWorkbook (dummy example spreadsheet)', () => {
       ['financiamento', 0.0149, 'price'],
     ]);
   });
+  it('reads payoff quotes on debts and the Pontes tab', () => {
+    const p = map(SAMPLE_SHEETS);
+    expect(p.debts.find((d) => d.value.name === 'Carro')?.value).toMatchObject({ payoffAmount: 30500, payoffDiscountAnnual: undefined, payoffQuotedOn: '2026-11-01' });
+    expect(p.debts.find((d) => d.value.name === 'Empréstimo pessoal')?.value).toMatchObject({ payoffDiscountAnnual: 0.055, payoffAmount: undefined });
+    expect(p.bridges.map((b) => [b.value.kind, b.value.monthlyRate, b.value.months])).toEqual([
+      ['emprestimo', 0.032, 12],
+      ['meta', 0.018, 12],
+      ['parcelar_fatura', 0.0934, 6],
+    ]);
+  });
+  it('refuses a debt quote with both an amount and a discount, and an unknown bridge type', () => {
+    const header = ['Nome', 'Saldo devedor', 'Juros a.m. (%)', 'Parcelas restantes', 'Sistema', 'Próxima parcela', 'Vencimento', 'Valor para quitar', 'Desconto (% a.a.)'];
+    const p = map({
+      Financiamento: [header, ['Moto', 9000, '1,5', 20, 'Price', '12/2026', 10, 8000, '5']],
+      Pontes: [['Nome', 'Tipo', 'Juros a.m. (%)', 'Prazo'], ['X', 'Cartão mágico', '2', 12]],
+    });
+    expect(p.debts).toHaveLength(0);
+    expect(p.bridges).toHaveLength(0);
+    expect(p.warnings.join(' ')).toMatch(/informe só um/);
+    expect(p.warnings.join(' ')).toMatch(/Pontes, linha 2/);
+  });
   it('maps scenarios into simulator changes', () => {
     expect(p.scenarios.map((s) => s.value.changes[0].type)).toEqual(['purchase', 'subscription', 'incomeChange', 'costChange', 'emergency']);
     expect(p.scenarios[2].value.changes[0]).toMatchObject({ deltaPct: -0.2, months: 3, startMonth: '2027-01' });
@@ -100,13 +121,13 @@ describe('duplicates and commit', () => {
     expect(p.entries.find((e) => e.value.name === 'Aluguel')).toMatchObject({ duplicate: true, value: { id: 'old-rent' } });
     expect(p.installments.filter((i) => i.value.cardId === 'old-nu')).toHaveLength(3);
     expect(countDuplicates(p)).toBe(2);
-    expect(countNew(p)).toBe(25);
+    expect(countNew(p)).toBe(28);
   });
   it('writes everything in one transaction, with a usable projection afterwards', async () => {
     const db = nodeDriver();
     await migrate(db);
     const p = map(SAMPLE_SHEETS, await loadProfile(db));
-    expect(await commitImport(db, p, 'skip', TODAY)).toBe(27);
+    expect(await commitImport(db, p, 'skip', TODAY)).toBe(30);
     const profile = await loadProfile(db);
     expect(profile.balanceDate).toBe(TODAY);
     expect(profile.accounts.reduce((s, a) => s + a.balance, 0)).toBe(12200);

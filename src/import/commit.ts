@@ -1,5 +1,5 @@
 import type { SqlDriver } from '../db/driver';
-import { saveAccount, saveCard, saveDebt, saveEntry, saveInstallment, saveScenario, setBalanceDate } from '../db/repos';
+import { saveAccount, saveBridge, saveCard, saveDebt, saveEntry, saveInstallment, saveScenario, setBalanceDate } from '../db/repos';
 import type { ImportPreview, Row } from './mapWorkbook';
 
 export type DuplicateMode = 'skip' | 'replace';
@@ -8,13 +8,14 @@ export type DuplicateMode = 'skip' | 'replace';
 export async function commitImport(db: SqlDriver, preview: ImportPreview, mode: DuplicateMode, today: string): Promise<number> {
   const keep = <T>(rows: Row<T>[]) => rows.filter((r) => mode === 'replace' || !r.duplicate).map((r) => r.value);
   const accounts = keep(preview.accounts);
-  const groups = [accounts, keep(preview.cards), keep(preview.entries), keep(preview.installments), keep(preview.debts), keep(preview.scenarios)];
+  const groups = [accounts, keep(preview.cards), keep(preview.entries), keep(preview.installments), keep(preview.debts), keep(preview.bridges), keep(preview.scenarios)];
   await db.transaction(async (tx) => {
     for (const a of accounts) await saveAccount(tx, a);
     for (const c of keep(preview.cards)) await saveCard(tx, c);
     for (const e of keep(preview.entries)) await saveEntry(tx, e);
     for (const i of keep(preview.installments)) await saveInstallment(tx, i);
     for (const d of keep(preview.debts)) await saveDebt(tx, d);
+    for (const b of keep(preview.bridges)) await saveBridge(tx, b);
     for (const s of keep(preview.scenarios)) await saveScenario(tx, s);
     // Balances typed in the spreadsheet are taken as today's balances.
     if (accounts.length > 0) await setBalanceDate(tx, today);
