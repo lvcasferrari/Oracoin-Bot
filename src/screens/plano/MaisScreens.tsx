@@ -1,5 +1,6 @@
 // Screens split out of Plano so the hub stays short: Premissas, Crédito ponte, Privacidade e dados.
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { forecastError, paramRow, PARAM_KEYS } from '../../engine';
 import { Button, COLORS } from '../../components/form';

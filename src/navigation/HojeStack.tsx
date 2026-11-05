@@ -9,7 +9,7 @@ const Stack = createNativeStackNavigator<HojeStackParamList>();
 
 export function HojeStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
       <Stack.Screen name="HojeHome" component={HojeScreen} options={{ title: 'Hoje' }} />
       <Stack.Screen name="ConfirmInvoice" component={ConfirmInvoiceScreen} options={{ title: 'Confirmar fatura', presentation: 'modal' }} />
       <Stack.Screen name="EntryForm" component={EntryFormScreen} options={{ title: 'Lançamento', presentation: 'modal' }} />

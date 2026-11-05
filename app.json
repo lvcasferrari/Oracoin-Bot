@@ -4,7 +4,7 @@
     "slug": "life-strategic-plan",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.lvcasferrari.lifestrategicplan",

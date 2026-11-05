@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Text } from './Text';
 import { BANK_PRESETS } from '../lib/banks';
 import { logError } from '../lib/log';
 
 // Borders and placeholders meet WCAG 1.4.11 / 1.4.3 on white and on the light grey background.
 // placeholder doubles as secondary text: #595959 keeps 5.6:1 even on the grey Card (rgba 127 at 12%), WCAG 1.4.3.
-export const COLORS = { primary: '#2f6f4f', primaryText: '#265a40', danger: '#a33a3a', error: '#b3261e', border: '#767676', placeholder: '#595959', text: '#1f1f1f' };
+export { COLORS } from './theme';
+import { ACCENT, COLORS } from './theme';
 
 /** Speaks a message on iOS and Android (accessibilityLiveRegion only exists on Android). */
 export const announce = (message?: string): void => {
@@ -148,8 +151,9 @@ export function Button({ title, onPress, kind = 'primary', disabled, accessibili
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
-      style={[styles.button, kind === 'primary' && styles.primary, kind === 'danger' && styles.danger, kind === 'secondary' && styles.secondary, disabled && styles.disabled]}
+      style={({ pressed }) => [styles.button, kind === 'danger' && styles.danger, kind === 'secondary' && styles.secondary, disabled && styles.disabled, pressed && styles.pressed]}
     >
+      {kind === 'primary' && <LinearGradient colors={ACCENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />}
       <Text style={[styles.buttonText, kind === 'secondary' && styles.secondaryText]}>{title}</Text>
     </Pressable>
   );
@@ -203,19 +207,20 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '500' },
   hint: { fontSize: 12, opacity: 0.7 },
   error: { fontSize: 13, color: COLORS.error },
-  input: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: COLORS.text },
+  input: { borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: COLORS.text },
   inputError: { borderColor: COLORS.error },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 22, borderWidth: 1, borderColor: COLORS.border },
+  chip: { minHeight: 44, paddingHorizontal: 14, justifyContent: 'center', borderRadius: 22, borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.06)' },
   chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   chipText: { fontSize: 15 },
-  chipTextSelected: { color: '#fff', fontWeight: '600' },
-  button: { minHeight: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
+  chipTextSelected: { color: '#06140e', fontWeight: '600' },
+  button: { minHeight: 48, borderRadius: 24, overflow: 'hidden', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
   primary: { backgroundColor: COLORS.primary },
   danger: { backgroundColor: COLORS.danger },
-  secondary: { borderWidth: 1, borderColor: COLORS.border },
+  secondary: { borderWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border, backgroundColor: 'rgba(255,255,255,0.07)' },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.5 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  buttonText: { color: '#06140e', fontSize: 16, fontWeight: '600' },
   secondaryText: { color: COLORS.text, fontWeight: '500' },
   confirm: { gap: 8, padding: 12, borderRadius: 12, backgroundColor: 'rgba(163,58,58,0.08)' },
   confirmText: { fontSize: 15 },

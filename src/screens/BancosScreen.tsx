@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { availableLimit, cents, debtPayment, invoiceFor, monthDiff, monthOf, type Debt } from '../engine';
 import { Button } from '../components/form';
@@ -119,13 +120,13 @@ const styles = StyleSheet.create({
   actions: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   flex: { flex: 1 },
-  hint: { fontSize: 13, color: '#595959' },
+  hint: { fontSize: 13, color: '#a3b1ac' },
   links: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 20 },
   linkBox: { minHeight: 44, justifyContent: 'center' },
-  link: { fontSize: 15, fontWeight: '600', color: '#265a40' },
+  link: { fontSize: 15, fontWeight: '600', color: '#7ee2b4' },
   bank: { fontSize: 18, fontWeight: '600' },
   body: { fontSize: 15 },
-  meta: { fontSize: 13, color: '#595959' },
+  meta: { fontSize: 13, color: '#a3b1ac' },
   strong: { fontSize: 16, fontWeight: '600' },
   item: { flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 8 },
   cardBox: { gap: 8, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: '#8884' },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/Text';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NavigationProp, ParamListBase } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -210,13 +211,13 @@ const styles = StyleSheet.create({
   bar: { gap: 4 },
   barHead: { flexDirection: 'row', justifyContent: 'space-between' },
   track: { height: 8, borderRadius: 4, backgroundColor: '#8883', overflow: 'hidden' },
-  fill: { height: 8, backgroundColor: '#2f6f4f' },
+  fill: { height: 8, backgroundColor: '#5fd4a0' },
   link: { minHeight: 44, justifyContent: 'center' },
-  linkText: { fontSize: 15, color: '#265a40', fontWeight: '500' },
+  linkText: { fontSize: 15, color: '#7ee2b4', fontWeight: '500' },
   goal: { gap: 4, paddingVertical: 6 },
   group: { gap: 2, marginTop: 6 },
   paramRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 },
   paramLabel: { flex: 1, fontSize: 14 },
   paramValue: { fontSize: 14, fontWeight: '600' },
-  input: { borderWidth: 1, borderColor: '#767676', borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: '#1f1f1f' },
+  input: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', borderRadius: 10, paddingHorizontal: 12, minHeight: 44, fontSize: 16, color: '#eef3f1' },
 });

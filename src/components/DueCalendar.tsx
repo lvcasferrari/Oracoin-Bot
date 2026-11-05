@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import type { CashEvent } from '../engine';
 import { formatBRL } from '../lib/money';
 import { Money } from './ui';

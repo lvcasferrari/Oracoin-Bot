@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { exploreStrategiesAsync, monthlyCost, realizeStrategy, scenarioRows, type ScenarioRows, type Strategy, type StrategyCriterion } from '../../engine';
 import { commitScenario } from '../../db/repos';
@@ -183,13 +184,13 @@ const styles = StyleSheet.create({
   done: { fontSize: 15, color: COLORS.primaryText, fontWeight: '600' },
   note: { fontSize: 13, lineHeight: 18, color: COLORS.placeholder },
   warn: { fontSize: 13, color: COLORS.danger },
-  option: { gap: 8, padding: 12, marginTop: 8, borderRadius: 10, borderWidth: 1, borderColor: '#c9c9c9', minHeight: 44 },
-  optionOn: { borderColor: COLORS.primary, borderWidth: 2, padding: 11, backgroundColor: '#eef5f1' },
+  option: { gap: 8, padding: 12, marginTop: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)', minHeight: 44 },
+  optionOn: { borderColor: COLORS.primary, borderWidth: 2, padding: 11, backgroundColor: 'rgba(95,212,160,0.12)' },
   title: { fontSize: 15, fontWeight: '600', lineHeight: 20, color: COLORS.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 },
   metric: { width: '50%', gap: 2 },
   metricLabel: { fontSize: 12, color: COLORS.placeholder },
   metricValue: { fontSize: 16, fontWeight: '600', fontVariant: ['tabular-nums'], color: COLORS.text },
-  skeleton: { height: 14, borderRadius: 4, backgroundColor: '#e6e6e6', marginTop: 10 },
+  skeleton: { height: 14, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.10)', marginTop: 10 },
   skeletonShort: { width: '60%' },
 });

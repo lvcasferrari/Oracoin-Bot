@@ -1,6 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { ComponentProps } from 'react';
+import { BlurView } from 'expo-blur';
+import { StyleSheet } from 'react-native';
 import { COLORS } from '../components/form';
 import { BancosStack } from './BancosStack';
 import { FluxoStack } from './FluxoStack';
@@ -28,6 +30,9 @@ export function RootTabs() {
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.placeholder,
+        // Frosted bar over the backdrop.
+        tabBarStyle: { backgroundColor: 'rgba(8,18,20,0.55)', borderTopColor: COLORS.hairline },
+        tabBarBackground: () => <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />,
         tabBarIcon: ({ focused, color, size }) => <Ionicons name={ICONS[route.name][focused ? 1 : 0]} color={color} size={size} />,
       })}
     >

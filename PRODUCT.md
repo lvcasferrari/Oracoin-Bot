@@ -29,8 +29,8 @@ Born from a personal spreadsheet called "Life Strategic Plan" and the "Plano de 
 - pt-BR only, BRL money, dates dd/mm/aaaa.
 - No investment advice and no credit offers (CVM/BCB guardrails): the fixed disclaimer "Simulação ilustrativa baseada nos dados que você informou. Não é recomendação de investimento nem de crédito." appears on result screens; a banned-words list in `src/lib/copy.ts` is enforced by tests.
 - The app compares only options the user informed; a target ("meta") rate is labelled "meta, não oferta" and never ranks first.
-- Light mode is forced for now (dark mode undecided).
-- Open: Android backup policy, dark theme, monetization.
+- Dark mode is the default and only theme: a "liquid glass" look (frosted cards on a teal-to-indigo gradient, mint accent). Tokens in `src/components/theme.ts`.
+- Open: Android backup policy, monetization.
 
 ## Brand Commitments
 

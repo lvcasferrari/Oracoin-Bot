@@ -15,7 +15,7 @@ const Stack = createNativeStackNavigator<PlanoStackParamList>();
 
 export function PlanoStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
       <Stack.Screen name="PlanoHome" component={PlanoScreen} options={{ title: 'Plano' }} />
       <Stack.Screen name="GoalForm" component={GoalFormScreen} options={{ title: 'Meta', presentation: 'modal' }} />
       <Stack.Screen name="ParameterForm" component={ParameterFormScreen} options={{ title: 'Premissa', presentation: 'modal' }} />

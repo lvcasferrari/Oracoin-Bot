@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/Text';
 import { paymentHistory, paymentId, type HistoryItem, type Payment } from '../../engine';
 import { listPayments, removePayment, savePayment } from '../../db/repos';
 import { Button, COLORS, FormError, trySave, useAnnounce, useBusy } from '../../components/form';

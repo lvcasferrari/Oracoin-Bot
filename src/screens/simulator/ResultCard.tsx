@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/Text';
 import { criticalMonth, type ScenarioResult, type Verdict } from '../../engine';
 import { Disclaimer } from '../../components/Disclaimer';
 import { useAnnounce } from '../../components/form';
@@ -156,13 +157,13 @@ const styles = StyleSheet.create({
   headline: { fontSize: 19, fontWeight: '600' },
   body: { fontSize: 15 },
   section: { fontSize: 15, fontWeight: '600', marginTop: 8 },
-  hint: { fontSize: 13, lineHeight: 18, color: '#595959' },
+  hint: { fontSize: 13, lineHeight: 18, color: '#a3b1ac' },
   link: { minHeight: 44, justifyContent: 'center' },
-  linkText: { fontSize: 15, color: '#265a40', fontWeight: '600' },
-  negative: { color: '#b3261e', fontWeight: '600' },
+  linkText: { fontSize: 15, color: '#7ee2b4', fontWeight: '600' },
+  negative: { color: '#ff8a80', fontWeight: '600' },
   timeline: { gap: 8, paddingVertical: 6 },
-  month: { minWidth: 92, padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#767676' },
-  monthCritical: { borderColor: '#b3261e', borderWidth: 2 },
+  month: { minWidth: 92, padding: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' },
+  monthCritical: { borderColor: '#ff8a80', borderWidth: 2 },
   monthLabel: { fontSize: 12, opacity: 0.7 },
   monthValue: { fontSize: 14, fontWeight: '600' },
   criticalText: { fontSize: 11, fontWeight: '600' },

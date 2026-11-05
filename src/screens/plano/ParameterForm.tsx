@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { param, paramRow, type ParamKey } from '../../engine';
 import { restoreParameterDefault, saveParameter, USER_SOURCE } from '../../db/repos';

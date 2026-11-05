@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { loadSample } from '../data/loadSample';
 import { EMPTY_BODY, EMPTY_TITLE } from '../lib/copy';
 import type { RootStackParamList } from '../navigation/types';
@@ -38,8 +39,8 @@ const styles = StyleSheet.create({
   page: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
   title: { fontSize: 24, fontWeight: '600' },
   body: { fontSize: 16, opacity: 0.7 },
-  primary: { minHeight: 48, marginTop: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2f6f4f' },
-  primaryText: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  primary: { minHeight: 48, marginTop: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center', backgroundColor: '#5fd4a0' },
+  primaryText: { color: '#06140e', fontSize: 17, fontWeight: '600' },
   secondary: { minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   secondaryText: { fontSize: 14, opacity: 0.6 },
 });

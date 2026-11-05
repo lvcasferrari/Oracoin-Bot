@@ -6,7 +6,7 @@ const Stack = createNativeStackNavigator<SimularStackParamList>();
 
 export function SimularStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ statusBarStyle: 'light' }}>
       <Stack.Screen name="SimularHome" component={SimuladorScreen} options={{ title: 'E se…?' }} />
     </Stack.Navigator>
   );

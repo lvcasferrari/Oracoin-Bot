@@ -1,6 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps, ReactNode } from 'react';
-import { Pressable, StyleProp, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, TextStyle, View } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { Text } from './Text';
+import { GLASS } from './theme';
 
 import { formatBRL } from '../lib/money';
 
@@ -12,7 +15,12 @@ export function Money({ value, style }: { value: number; style?: StyleProp<TextS
 }
 
 export function Card({ children }: { children: ReactNode }) {
-  return <View style={styles.card}>{children}</View>;
+  return (
+    <View style={styles.card}>
+      <BlurView intensity={GLASS.blur} tint="dark" style={StyleSheet.absoluteFill} />
+      {children}
+    </View>
+  );
 }
 
 /** Semáforo pill: colour plus text, never colour alone (accessibility). */
@@ -33,13 +41,13 @@ export type IconName = ComponentProps<typeof Ionicons>['name'];
 export function ListRow({ label, value, detail, onPress, hint, icon }: { label: string; value?: ReactNode; detail?: string; onPress?: () => void; hint?: string; icon?: IconName }) {
   const body = (
     <>
-      {icon && <Ionicons name={icon} size={22} color="#2f6f4f" accessibilityElementsHidden importantForAccessibility="no" />}
+      {icon && <Ionicons name={icon} size={22} color="#5fd4a0" accessibilityElementsHidden importantForAccessibility="no" />}
       <View style={styles.rowText}>
         <Text style={styles.rowLabel}>{label}</Text>
         {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
       </View>
       {typeof value === 'string' ? <Text style={styles.rowValue}>{value}</Text> : value}
-      {onPress && <Ionicons name="chevron-forward" size={18} color="#595959" accessibilityElementsHidden importantForAccessibility="no" />}
+      {onPress && <Ionicons name="chevron-forward" size={18} color="#a3b1ac" accessibilityElementsHidden importantForAccessibility="no" />}
     </>
   );
   return onPress ? (
@@ -183,7 +191,7 @@ export function BarChart({ bars, height = 120, onPress }: { bars: Bar[]; height?
 /** Horizontal usage meter (e.g. card limit used); turns amber at 70% and red at 90%. */
 export function Meter({ used, total, label }: { used: number; total: number; label: string }) {
   const ratio = total > 0 ? Math.min(1, Math.max(0, used / total)) : 0;
-  const color = ratio >= 0.9 ? '#b3261e' : ratio >= 0.7 ? '#b26a00' : '#2f6f4f';
+  const color = ratio >= 0.9 ? '#ff8a80' : ratio >= 0.7 ? '#ffc46b' : '#5fd4a0';
   return (
     <View accessible accessibilityLabel={`${label}: ${Math.round(ratio * 100)}%`} style={styles.meterBox}>
       <View style={styles.meterHead}>
@@ -201,10 +209,10 @@ const styles = StyleSheet.create({
   chart: { flexDirection: 'row', alignItems: 'flex-start', gap: 4, marginTop: 8 },
   barCol: { flex: 1, alignItems: 'stretch' },
   bar: { borderRadius: 3 },
-  barUp: { backgroundColor: '#2f6f4f' },
-  barDown: { backgroundColor: '#b3261e' },
-  barMark: { borderWidth: 2, borderColor: '#b26a00' },
-  zero: { height: 1, backgroundColor: '#767676' },
+  barUp: { backgroundColor: '#5fd4a0' },
+  barDown: { backgroundColor: '#ff8a80' },
+  barMark: { borderWidth: 2, borderColor: '#ffc46b' },
+  zero: { height: 1, backgroundColor: 'rgba(255,255,255,0.22)' },
   barLabel: { fontSize: 11, textAlign: 'center', opacity: 0.75, marginTop: 4 },
   // Sparse axis labels may overflow their narrow bar column.
   axisLabel: { width: 40, alignSelf: 'center' },
@@ -213,32 +221,35 @@ const styles = StyleSheet.create({
   meterLabel: { fontSize: 13, opacity: 0.75 },
   meterTrack: { height: 10, borderRadius: 5, backgroundColor: 'rgba(127,127,127,0.25)', overflow: 'hidden' },
   meterFill: { height: 10, borderRadius: 5 },
-  card: { padding: 16, borderRadius: 16, backgroundColor: 'rgba(127,127,127,0.12)', gap: 6 },
+  card: {
+    padding: 16, borderRadius: 22, gap: 6, overflow: 'hidden', backgroundColor: GLASS.tint,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: GLASS.edge, borderTopColor: 'rgba(255,255,255,0.28)',
+  },
   pill: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14, marginTop: 6 },
-  ok: { backgroundColor: '#d7f3df' },
-  warn: { backgroundColor: '#fff0c2' },
-  risk: { backgroundColor: '#ffd6d6' },
-  pillText: { fontSize: 13, color: '#222' },
+  ok: { backgroundColor: 'rgba(95,212,160,0.18)' },
+  warn: { backgroundColor: 'rgba(255,196,107,0.18)' },
+  risk: { backgroundColor: 'rgba(255,138,128,0.18)' },
+  pillText: { fontSize: 13, color: '#eef3f1' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, paddingVertical: 6 },
   rowText: { flex: 1, gap: 2 },
-  rowLabel: { fontSize: 16, color: '#1f1f1f' },
-  rowDetail: { fontSize: 13, color: '#595959' },
+  rowLabel: { fontSize: 16, color: '#eef3f1' },
+  rowDetail: { fontSize: 13, color: '#a3b1ac' },
   stackBox: { gap: 10, marginTop: 4 },
   stack: { flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: 'rgba(127,127,127,0.18)' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 16, rowGap: 6 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   swatch: { width: 10, height: 10, borderRadius: 3 },
-  legendText: { fontSize: 13, color: '#595959' },
-  legendValue: { fontSize: 13, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
+  legendText: { fontSize: 13, color: '#a3b1ac' },
+  legendValue: { fontSize: 13, fontWeight: '600', color: '#eef3f1', fontVariant: ['tabular-nums'] },
   hbars: { gap: 10, marginTop: 4 },
   hrow: { gap: 4 },
   hhead: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  hlabel: { flex: 1, fontSize: 14, color: '#1f1f1f' },
-  hvalue: { fontSize: 14, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
+  hlabel: { flex: 1, fontSize: 14, color: '#eef3f1' },
+  hvalue: { fontSize: 14, fontWeight: '600', color: '#eef3f1', fontVariant: ['tabular-nums'] },
   htrack: { height: 10, borderRadius: 5, backgroundColor: 'rgba(127,127,127,0.18)' },
-  hfill: { height: 10, borderRadius: 5, backgroundColor: '#2f6f4f' },
-  hfillWarn: { backgroundColor: '#b26a00' },
-  hmarker: { position: 'absolute', top: -3, width: 2, height: 16, marginLeft: -1, backgroundColor: '#1f1f1f' },
-  markerSwatch: { width: 2, height: 12, backgroundColor: '#1f1f1f' },
-  rowValue: { fontSize: 16, fontWeight: '600', color: '#1f1f1f', fontVariant: ['tabular-nums'] },
+  hfill: { height: 10, borderRadius: 5, backgroundColor: '#5fd4a0' },
+  hfillWarn: { backgroundColor: '#ffc46b' },
+  hmarker: { position: 'absolute', top: -3, width: 2, height: 16, marginLeft: -1, backgroundColor: '#eef3f1' },
+  markerSwatch: { width: 2, height: 12, backgroundColor: '#eef3f1' },
+  rowValue: { fontSize: 16, fontWeight: '600', color: '#eef3f1', fontVariant: ['tabular-nums'] },
 });

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../components/Text';
 import type { Card } from '../../engine';
 import { Chips, DateInput, DayInput, Input, MoneyInput, MonthInput } from '../../components/form';
 import type { SimDraft, SimType } from './mappers';
