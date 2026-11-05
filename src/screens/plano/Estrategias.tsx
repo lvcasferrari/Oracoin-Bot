@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { exploreStrategies, monthlyCost, realizeStrategy, scenarioRows, type ScenarioRows, type Strategy, type StrategyCriterion } from '../../engine';
+import { exploreStrategiesAsync, monthlyCost, realizeStrategy, scenarioRows, type ScenarioRows, type Strategy, type StrategyCriterion } from '../../engine';
 import { commitScenario } from '../../db/repos';
 import { Disclaimer } from '../../components/Disclaimer';
 import { Button, Chips, COLORS, FormError, InlineConfirm, trySave, useAnnounce, useBusy } from '../../components/form';
@@ -26,23 +26,21 @@ export function EstrategiasScreen({ navigation }: NativeStackScreenProps<PlanoSt
   const [busy, run] = useBusy();
   useAnnounce(message);
 
-  // Up to 96 combinations: deferred a tick so the screen and its loading state paint first.
+  // Up to 96 combinations, computed in slices so the screen (and Back) stay responsive.
   useEffect(() => {
     let alive = true;
-    const task = setTimeout(() => {
-      try {
-        const found = exploreStrategies(profile, bridges, today, { criterion });
-        if (!alive) return;
+    exploreStrategiesAsync(profile, bridges, today, { criterion, cancelled: () => !alive })
+      .then((found) => {
+        if (!alive || !found) return;
         setList(found);
         setSelected(0);
-      } catch (e) {
+      })
+      .catch((e: unknown) => {
         logError('[Estratégias] explore', e);
         if (alive) setError('Não consegui comparar as estratégias. Confira as dívidas e as premissas.');
-      }
-    }, 0);
+      });
     return () => {
       alive = false;
-      clearTimeout(task);
     };
   }, [profile, bridges, today, criterion]);
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { debtViews, exploreStrategies, realizeStrategy } from './strategies';
+import { debtViews, exploreStrategies, exploreStrategiesAsync, realizeStrategy } from './strategies';
 import { DEFAULT_PARAMETERS } from './params';
 import { makeProfile, TODAY } from './testing';
 import type { Bridge, Debt, Entry, Profile } from './types';
@@ -88,5 +88,10 @@ describe('debtViews', () => {
     const all = exploreStrategies(p, [bridge('banco', 'emprestimo', 0.03)], TODAY, { top: 1000 });
     expect(all.filter((s) => s.payoffs.length > 0).every((s) => !s.covered)).toBe(true);
     expect(all[0].payoffs).toHaveLength(0);
+  });
+  it('the async version gives the same ranking and stops when cancelled', async () => {
+    const sync = exploreStrategies(tight(), bridges, TODAY).map((s) => s.avgMonthlyCost);
+    expect((await exploreStrategiesAsync(tight(), bridges, TODAY))?.map((s) => s.avgMonthlyCost)).toEqual(sync);
+    expect(await exploreStrategiesAsync(tight(), bridges, TODAY, { cancelled: () => true })).toBeNull();
   });
 });
