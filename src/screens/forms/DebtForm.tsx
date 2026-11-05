@@ -3,7 +3,7 @@ import { StyleSheet, Text } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { addMonths, debtSchedule, debtSummary, monthOf, type Debt } from '../../engine';
 import { removeDebt, saveDebt } from '../../db/repos';
-import { Button, Chips, DateInput, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, MonthInput, trySave } from '../../components/form';
+import { Button, Chips, DateInput, DayInput, FormError, FormScreen, InlineConfirm, Input, MoneyInput, MonthInput, More, trySave } from '../../components/form';
 import { Money } from '../../components/ui';
 import { useForm } from '../../components/useForm';
 import { formatDateBR, formatMonthBR } from '../../lib/dateInput';
@@ -42,6 +42,7 @@ export function DebtForm({ initial, today, onSubmit }: { initial?: Debt; today: 
       principal: toInput(initial?.principal),
       ratePct: initial ? toInput(Math.round(initial.monthlyRate * 1e6) / 1e4) : '',
       months: initial ? String(initial.months) : '',
+      installment: '',
       system: initial?.system ?? 'price',
       startMonth: formatMonthBR(initial?.startMonth ?? addMonths(monthOf(today), 1)),
       dueDay: initial ? String(initial.dueDay) : '',
@@ -60,25 +61,30 @@ export function DebtForm({ initial, today, onSubmit }: { initial?: Debt; today: 
     <>
       <Input label="Nome" value={f.draft.name} onChangeText={f.set('name')} error={f.errors.name} placeholder="Ex.: Carro" />
       <Chips label="Tipo" options={KINDS} value={f.draft.kind} onChange={f.set('kind')} />
-      <MoneyInput label="Quanto ainda falta pagar (saldo devedor)" value={f.draft.principal} onChangeText={f.set('principal')} error={f.errors.principal} />
-      <Input label="Juros ao mês (%)" keyboardType="decimal-pad" placeholder="Ex.: 1,49" value={f.draft.ratePct} onChangeText={f.set('ratePct')} error={f.errors.ratePct} hint="Está no contrato ou no app do banco." />
-      <Input label="Parcelas que faltam" keyboardType="number-pad" value={f.draft.months} onChangeText={f.set('months')} error={f.errors.months} />
-      <Chips label="Sistema" options={SYSTEMS} value={f.draft.system} onChange={f.set('system')} />
-      <MonthInput label="Mês da próxima parcela" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
-      <DayInput label="Vence dia" value={f.draft.dueDay} onChangeText={f.set('dueDay')} error={f.errors.dueDay} />
-      <Chips label="O contrato deixa quitar antes?" options={PAYOFFABLE} value={f.draft.payoffable} onChange={f.set('payoffable')} />
-      {f.draft.payoffable === 'sim' && (
-        <>
-          <Chips label="O credor já informou quanto custa quitar?" options={QUOTES} value={f.draft.quoteKind} onChange={f.set('quoteKind')} />
-          {f.draft.quoteKind === 'valor' && (
-            <MoneyInput label="Valor para quitar hoje" value={f.draft.payoffAmount} onChangeText={f.set('payoffAmount')} error={f.errors.payoffAmount} hint="O valor do boleto de quitação, no app do banco." />
-          )}
-          {f.draft.quoteKind === 'desconto' && (
-            <Input label="Desconto ao ano (%)" keyboardType="decimal-pad" placeholder="Ex.: 5,5" value={f.draft.discountPct} onChangeText={f.set('discountPct')} error={f.errors.discountPct} hint="A taxa usada para descontar as parcelas que faltam." />
-          )}
-          {f.draft.quoteKind !== 'none' && <DateInput label="Cotado em (opcional)" value={f.draft.quotedOn} onChangeText={f.set('quotedOn')} error={f.errors.quotedOn} />}
-        </>
+      <MoneyInput label="Quanto ainda falta pagar (saldo devedor)" value={f.draft.principal} onChangeText={f.set('principal')} error={f.errors.principal} hint="Está no app do banco." />
+      {f.draft.ratePct.trim() === '' && (
+        <MoneyInput label="Valor da parcela" value={f.draft.installment} onChangeText={f.set('installment')} error={f.errors.installment ?? f.errors.ratePct} hint="Com a parcela, o app calcula os juros para você." />
       )}
+      <Input label="Parcelas que faltam" keyboardType="number-pad" value={f.draft.months} onChangeText={f.set('months')} error={f.errors.months} />
+      <DayInput label="Vence dia" value={f.draft.dueDay} onChangeText={f.set('dueDay')} error={f.errors.dueDay} />
+      <More open={!!initial || !!(f.errors.startMonth || f.errors.payoffAmount || f.errors.discountPct || f.errors.quotedOn)}>
+        <Input label="Juros ao mês (%) (opcional)" keyboardType="decimal-pad" placeholder="Ex.: 1,49" value={f.draft.ratePct} onChangeText={f.set('ratePct')} error={f.draft.ratePct.trim() === '' ? undefined : f.errors.ratePct} hint="Se souber, vale mais que a parcela." />
+        <Chips label="Sistema" options={SYSTEMS} value={f.draft.system} onChange={f.set('system')} />
+        <MonthInput label="Mês da próxima parcela" value={f.draft.startMonth} onChangeText={f.set('startMonth')} error={f.errors.startMonth} />
+        <Chips label="O contrato deixa quitar antes?" options={PAYOFFABLE} value={f.draft.payoffable} onChange={f.set('payoffable')} />
+        {f.draft.payoffable === 'sim' && (
+          <>
+            <Chips label="O credor já informou quanto custa quitar?" options={QUOTES} value={f.draft.quoteKind} onChange={f.set('quoteKind')} />
+            {f.draft.quoteKind === 'valor' && (
+              <MoneyInput label="Valor para quitar hoje" value={f.draft.payoffAmount} onChangeText={f.set('payoffAmount')} error={f.errors.payoffAmount} hint="O valor do boleto de quitação, no app do banco." />
+            )}
+            {f.draft.quoteKind === 'desconto' && (
+              <Input label="Desconto ao ano (%)" keyboardType="decimal-pad" placeholder="Ex.: 5,5" value={f.draft.discountPct} onChangeText={f.set('discountPct')} error={f.errors.discountPct} hint="A taxa usada para descontar as parcelas que faltam." />
+            )}
+            {f.draft.quoteKind !== 'none' && <DateInput label="Cotado em (opcional)" value={f.draft.quotedOn} onChangeText={f.set('quotedOn')} error={f.errors.quotedOn} />}
+          </>
+        )}
+      </More>
       {summary && (
         <Text style={styles.preview}>
           Próxima parcela: <Money value={summary.firstPayment} />. Juros até o fim: <Money value={summary.totalInterest} /> (estimado).

@@ -17,7 +17,7 @@ import {
 const card: CardDraft = { id: 'c', bank: 'Nubank', name: '', closingDay: '5', dueDay: '12', limit: '8.000', variableEstimate: '800', availableInformed: '' };
 const entry: EntryDraft = { id: 'e', kind: 'out', name: 'Aluguel', amount: '2.000', recurrence: 'monthly', day: '10', startMonth: '11/2026', endMonth: '', date: '' };
 
-const noQuote = { payoffable: 'sim' as const, quoteKind: 'none' as const, payoffAmount: '', discountPct: '', quotedOn: '' };
+const noQuote = { payoffable: 'sim' as const, quoteKind: 'none' as const, payoffAmount: '', discountPct: '', quotedOn: '', installment: '' };
 
 describe('form mappers', () => {
   it('builds a card, naming it after the bank when the name is empty', () => {
@@ -30,6 +30,8 @@ describe('form mappers', () => {
     const r = cardFromDraft({ ...card, dueDay: '5', limit: '', availableInformed: '10' });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors).toMatchObject({ dueDay: MSG.sameDays, limit: MSG.required });
+    const closing = cardFromDraft({ ...card, closingDay: '', dueDay: '5' });
+    expect(closing.ok && closing.value.closingDay).toBe(29);
     const over = cardFromDraft({ ...card, availableInformed: '9.000' });
     expect(!over.ok && over.errors.availableInformed).toBe(MSG.overLimit);
   });
@@ -54,6 +56,14 @@ describe('form mappers', () => {
   it('builds a debt with the rate as a fraction', () => {
     const r = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '1,49', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote });
     expect(r).toEqual({ ok: true, value: expect.objectContaining({ principal: 12000, monthlyRate: 0.0149, months: 24, startMonth: '2026-12' }) });
+  });
+  it('derives the monthly rate from the installment when the rate is blank', () => {
+    const r = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote, installment: '598,39' });
+    expect(r.ok && r.value.monthlyRate).toBeCloseTo(0.0149, 4);
+    const low = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote, installment: '100' });
+    expect(!low.ok && Object.keys(low.errors)).toEqual(['installment']);
+    const neither = debtFromDraft({ id: 'd', name: 'Carro', kind: 'financiamento', principal: '12.000', ratePct: '', months: '24', system: 'price', startMonth: '12/2026', dueDay: '15', ...noQuote });
+    expect(!neither.ok && Object.keys(neither.errors)).toEqual(['ratePct']);
   });
   it('reads a payoff quote (amount or discount, never both) and clears it when removed', () => {
     const base = { id: 'd', name: 'Carro', kind: 'financiamento' as const, principal: '12.000', ratePct: '1,49', months: '24', system: 'price' as const, startMonth: '12/2026', dueDay: '15' };

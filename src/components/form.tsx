@@ -175,6 +175,13 @@ export function FormError({ message }: { message?: string }) {
   return <Text style={styles.error}>{message}</Text>;
 }
 
+/** Rarely needed fields, folded away; opens by itself when one of them has an error. */
+export function More({ children, open, label = 'Mais opções' }: { children: ReactNode; open?: boolean; label?: string }) {
+  const [shown, setShown] = useState(false);
+  if (shown || open) return <>{children}</>;
+  return <Button title={label} kind="secondary" onPress={() => setShown(true)} />;
+}
+
 export const SAVE_ERROR = 'Não consegui salvar. Seus dados anteriores continuam guardados. Tente de novo.';
 
 /** Runs a save; returns false and a calm message on failure instead of crashing. */

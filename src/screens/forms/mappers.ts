@@ -56,8 +56,9 @@ export interface CardDraft {
 export function cardFromDraft(d: CardDraft): Result<Card> {
   const errors: Record<string, string> = {};
   if (!d.bank.trim()) errors.bank = MSG.required;
-  const closingDay = day(errors, 'closingDay', d.closingDay);
   const dueDay = day(errors, 'dueDay', d.dueDay);
+  // Blank closing day: most Brazilian cards close about 7 days before the due day.
+  const closingDay = d.closingDay.trim() === '' && dueDay !== undefined ? ((dueDay + 23) % 31) + 1 : day(errors, 'closingDay', d.closingDay);
   if (closingDay !== undefined && closingDay === dueDay) errors.dueDay = MSG.sameDays;
   const limit = money(errors, 'limit', d.limit, { required: true, positive: true });
   const variableEstimate = money(errors, 'variableEstimate', d.variableEstimate) ?? 0;
@@ -107,6 +108,8 @@ export function entryFromDraft(d: EntryDraft): Result<Entry> {
 
 export interface DebtDraft {
   id: string; name: string; kind: Debt['kind']; principal: string; ratePct: string; months: string;
+  /** The installment amount; when the rate is blank, the rate is derived from it (what people know offhand). */
+  installment: string;
   system: Debt['system']; startMonth: string; dueDay: string;
   /** Payoff quote: none, an amount to settle, or an annual discount rate. */
   payoffable: 'sim' | 'nao'; quoteKind: 'none' | 'valor' | 'desconto'; payoffAmount: string; discountPct: string; quotedOn: string;
@@ -116,10 +119,16 @@ export function debtFromDraft(d: DebtDraft): Result<Debt> {
   const errors: Record<string, string> = {};
   if (!d.name.trim()) errors.name = MSG.required;
   const principal = money(errors, 'principal', d.principal, { required: true, positive: true });
-  const ratePct = d.ratePct.trim() === '' ? null : parseBRL(d.ratePct);
-  if (ratePct === null || ratePct > 100) errors.ratePct = MSG.rate;
   const months = /^\s*\d+\s*$/.test(d.months) ? Number(d.months) : NaN;
   if (!(months >= 1 && months <= 600)) errors.months = MSG.months;
+  let ratePct = d.ratePct.trim() === '' ? null : parseBRL(d.ratePct);
+  if (ratePct === null && d.installment.trim() !== '') {
+    const installment = money(errors, 'installment', d.installment, { positive: true });
+    const monthly = installment !== undefined && principal !== undefined && months >= 1 ? effectiveLoanRate(principal, installment, months).monthly : null;
+    if (monthly !== null && monthly >= 0) ratePct = Math.round(monthly * 1e6) / 1e4;
+    else if (!errors.installment && principal !== undefined && months >= 1) errors.installment = 'Com essa parcela não fecha a conta. Confira o saldo, a parcela e quantas faltam.';
+  } else if (ratePct === null || ratePct > 100) errors.ratePct = d.installment.trim() === '' && d.ratePct.trim() === '' ? 'Informe o valor da parcela (ou os juros ao mês).' : MSG.rate;
+  if (ratePct !== null && ratePct > 100) errors.ratePct = MSG.rate;
   const startMonth = parseMonthBR(d.startMonth);
   if (!startMonth) errors.startMonth = MSG.month;
   const dueDay = day(errors, 'dueDay', d.dueDay);
