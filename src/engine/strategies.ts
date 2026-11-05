@@ -68,8 +68,8 @@ export function realizeStrategy(profile: Profile, plan: Plan, today: string, mak
   return plan.bridge ? applyBridge(p, plan.bridge, strategyReserve(profile, today), today, makeId) : p;
 }
 
-export function exploreStrategies(profile: Profile, bridges: Bridge[], today: string, opts: StrategyOptions = {}): Strategy[] {
-  const { criterion = 'custo_medio', variableCut = 0.1, top = 5 } = opts;
+/** Every evaluated combination, one at a time, so a caller can pause between them. */
+function* candidates(profile: Profile, bridges: Bridge[], today: string, variableCut: number): Generator<Strategy> {
   const month = monthOf(today);
   const reserve = strategyReserve(profile, today);
   // This month's points before the first possible draw cannot be fixed, but a strategy must not make them worse.
@@ -82,7 +82,6 @@ export function exploreStrategies(profile: Profile, bridges: Bridge[], today: st
     .map((debt) => ({ debt, amount: payoffReturn(debt, quoteOf(debt), month, today).payoffAmount }));
   const options = bridges.slice(0, MAX_BRIDGES);
 
-  const all: Strategy[] = [];
   for (const payoffs of subsets(levers)) {
     for (const reducedVariable of [false, true]) {
       let n = 0;
@@ -92,11 +91,39 @@ export function exploreStrategies(profile: Profile, bridges: Bridge[], today: st
       // Without a shortfall every bridge gives the same result: evaluate once.
       for (const bridge of short && options.length ? options : [null]) {
         const after = bridge ? applyBridge(p, bridge, reserve, today, makeId) : p;
-        all.push(measure(profile, after, { payoffs, bridge, reducedVariable, changes }, reserve, nowFloor, today));
+        yield measure(profile, after, { payoffs, bridge, reducedVariable, changes }, reserve, nowFloor, today);
       }
     }
   }
-  return rank(all, criterion).slice(0, top);
+}
+
+export function exploreStrategies(profile: Profile, bridges: Bridge[], today: string, opts: StrategyOptions = {}): Strategy[] {
+  const { criterion = 'custo_medio', variableCut = 0.1, top = 5 } = opts;
+  return rank([...candidates(profile, bridges, today, variableCut)], criterion).slice(0, top);
+}
+
+/**
+ * Same as exploreStrategies, but yields to the event loop every ~12 ms so the screen stays responsive
+ * (a debug build can take seconds). Resolves null when `cancelled()` turns true.
+ */
+export async function exploreStrategiesAsync(
+  profile: Profile,
+  bridges: Bridge[],
+  today: string,
+  opts: StrategyOptions & { cancelled?: () => boolean } = {},
+): Promise<Strategy[] | null> {
+  const { criterion = 'custo_medio', variableCut = 0.1, top = 5, cancelled = () => false } = opts;
+  const all: Strategy[] = [];
+  let slice = Date.now();
+  for (const s of candidates(profile, bridges, today, variableCut)) {
+    all.push(s);
+    if (Date.now() - slice > 12) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (cancelled()) return null;
+      slice = Date.now();
+    }
+  }
+  return cancelled() ? null : rank(all, criterion).slice(0, top);
 }
 
 export interface DebtView {
