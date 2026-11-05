@@ -4,7 +4,8 @@ import { BANK_PRESETS } from '../lib/banks';
 import { logError } from '../lib/log';
 
 // Borders and placeholders meet WCAG 1.4.11 / 1.4.3 on white and on the light grey background.
-export const COLORS = { primary: '#2f6f4f', primaryText: '#265a40', danger: '#a33a3a', error: '#b3261e', border: '#767676', placeholder: '#6b6b6b', text: '#1f1f1f' };
+// placeholder doubles as secondary text: #595959 keeps 5.6:1 even on the grey Card (rgba 127 at 12%), WCAG 1.4.3.
+export const COLORS = { primary: '#2f6f4f', primaryText: '#265a40', danger: '#a33a3a', error: '#b3261e', border: '#767676', placeholder: '#595959', text: '#1f1f1f' };
 
 /** Speaks a message on iOS and Android (accessibilityLiveRegion only exists on Android). */
 export const announce = (message?: string): void => {

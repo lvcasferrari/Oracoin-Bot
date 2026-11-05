@@ -93,7 +93,7 @@ export function BridgeFormScreen({ route, navigation }: NativeStackScreenProps<P
   );
 }
 
-// #6b6b6b on white is 5.3:1 (WCAG 1.4.3), no opacity.
+// COLORS.placeholder is AA on white and on cards (WCAG 1.4.3), no opacity.
 const styles = StyleSheet.create({
   about: { fontSize: 14, color: COLORS.placeholder, marginBottom: 12 },
 });

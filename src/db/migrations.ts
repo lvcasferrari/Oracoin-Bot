@@ -94,7 +94,7 @@ CREATE TABLE bridges (id TEXT PRIMARY KEY, name TEXT NOT NULL,
 CREATE TABLE payments (id TEXT PRIMARY KEY, ref_type TEXT NOT NULL CHECK (ref_type IN ('debt','invoice','bridge')),
   ref_id TEXT NOT NULL, month TEXT NOT NULL, paid_on TEXT NOT NULL, amount_cents INTEGER NOT NULL);
 INSERT INTO parameters (key, effective_from, value, source) VALUES
-  ('reserva_minima_months', '2026-10-26', 1, 'referência do app (meses de despesas essenciais)'),
+  ('reserva_minima_months', '2026-10-26', 0, 'referência do app: só cobre saldo negativo; aumente para manter uma reserva'),
   ('rendimento_caixa_mensal', '2026-10-26', 0.009, 'suposição do app; troque pelo rendimento da sua conta');
 `;
 

@@ -54,11 +54,11 @@ export function RoteiroScreen({ route }: NativeStackScreenProps<PlanoStackParamL
   );
 }
 
-// Secondary text uses #6b6b6b (5.3:1 on white) instead of opacity, for WCAG 1.4.3.
+// Secondary text uses COLORS.placeholder, not opacity (contrast holds on the grey cards).
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 12 },
   intro: { fontSize: 14, lineHeight: 20, color: COLORS.placeholder },
-  head: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 6 },
+  head: { gap: 2, marginBottom: 6 },
   month: { fontSize: 17, fontWeight: '600', color: COLORS.text },
   meta: { fontSize: 13, color: COLORS.placeholder },
   metaStrong: { fontSize: 13, fontWeight: '600', color: COLORS.text, fontVariant: ['tabular-nums'] },

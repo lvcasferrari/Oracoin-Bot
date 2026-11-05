@@ -27,7 +27,7 @@ export interface Strategy {
   /** Interest of the new credit (worst case for split invoices). */
   newInterest: number;
   lowestBalance: number;
-  /** False when the balance still falls below the reserve in a coming month (no bridge, or it could not cover). */
+  /** False when the balance falls below the reserve in a coming month, or this month ends up lower than doing nothing. */
   covered: boolean;
 }
 
@@ -72,6 +72,8 @@ export function exploreStrategies(profile: Profile, bridges: Bridge[], today: st
   const { criterion = 'custo_medio', variableCut = 0.1, top = 5 } = opts;
   const month = monthOf(today);
   const reserve = strategyReserve(profile, today);
+  // This month's points before the first possible draw cannot be fixed, but a strategy must not make them worse.
+  const nowFloor = Math.min(reserve, monthlySummary(profile, today)[0]?.lowBalance ?? reserve);
   // The most expensive payoffable debts are the levers.
   const levers = profile.debts
     .filter((d) => d.payoffable !== false && d.paidOffMonth === undefined)
@@ -90,7 +92,7 @@ export function exploreStrategies(profile: Profile, bridges: Bridge[], today: st
       // Without a shortfall every bridge gives the same result: evaluate once.
       for (const bridge of short && options.length ? options : [null]) {
         const after = bridge ? applyBridge(p, bridge, reserve, today, makeId) : p;
-        all.push(measure(profile, after, { payoffs, bridge, reducedVariable, changes }, reserve, today));
+        all.push(measure(profile, after, { payoffs, bridge, reducedVariable, changes }, reserve, nowFloor, today));
       }
     }
   }
@@ -128,7 +130,14 @@ export function debtViews(profile: Profile, bridges: Bridge[], today: string): D
     .sort((a, b) => (b.monthlyReturn ?? -1) - (a.monthlyReturn ?? -1));
 }
 
-function measure(profile: Profile, after: Profile, s: Pick<Strategy, 'payoffs' | 'bridge' | 'reducedVariable' | 'changes'>, reserve: number, today: string): Strategy {
+function measure(
+  profile: Profile,
+  after: Profile,
+  s: Pick<Strategy, 'payoffs' | 'bridge' | 'reducedVariable' | 'changes'>,
+  reserve: number,
+  nowFloor: number,
+  today: string,
+): Strategy {
   const rows = monthlySummary(after, today);
   const costs = rows.map(monthlyCost);
   const newDebts = after.debts.filter((d) => !profile.debts.some((b) => b.id === d.id));
@@ -136,8 +145,8 @@ function measure(profile: Profile, after: Profile, s: Pick<Strategy, 'payoffs' |
     .filter((i) => i.status === 'parcial' && !profile.invoices.some((b) => b.id === i.id && b.status === 'parcial'))
     .map((i) => worstCase(cents(i.amount - (i.paidAmount ?? 0)), i.partialPlanMonths ?? 1, profile.parameters, today));
   const lowest = Math.min(...rows.map((r) => r.lowBalance));
-  // This month's points before the first possible draw are already committed; no strategy can change them.
   const ahead = rows.slice(1).map((r) => r.lowBalance);
+  const nowOk = (rows[0]?.lowBalance ?? 0) >= nowFloor - 0.005;
   return {
     ...s,
     after,
@@ -147,7 +156,7 @@ function measure(profile: Profile, after: Profile, s: Pick<Strategy, 'payoffs' |
     newCredit: cents(newDebts.reduce((t, d) => t + d.principal, 0) + splits.reduce((t, w) => t + w.unpaid, 0)),
     newInterest: cents(newDebts.reduce((t, d) => t + debtSummary(debtSchedule(d)).totalInterest, 0) + splits.reduce((t, w) => t + w.totalCharges, 0)),
     lowestBalance: lowest,
-    covered: Math.min(...ahead) >= reserve - 0.005,
+    covered: nowOk && Math.min(...ahead) >= reserve - 0.005,
   };
 }
 
