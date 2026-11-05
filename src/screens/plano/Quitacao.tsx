@@ -28,11 +28,17 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
         <Text style={styles.label} accessibilityRole="header">
           Custo mensal
         </Text>
-        <Text style={styles.body}>
-          Parcelas de dívidas e faturas, sem o gasto variável do cartão. Média dos próximos 6 meses:{' '}
-          <Money value={next6.reduce((s, c) => s + c, 0) / Math.max(1, next6.length)} style={styles.strong} />. No fim da projeção:{' '}
-          <Money value={costs.at(-1) ?? 0} style={styles.strong} />.
-        </Text>
+        <View style={styles.figures}>
+          <View style={styles.figure}>
+            <Text style={styles.meta}>Média de 6 meses</Text>
+            <Money value={next6.reduce((s, c) => s + c, 0) / Math.max(1, next6.length)} style={styles.figureValue} />
+          </View>
+          <View style={styles.figure}>
+            <Text style={styles.meta}>Fim da projeção</Text>
+            <Money value={costs.at(-1) ?? 0} style={styles.figureValue} />
+          </View>
+        </View>
+        <Text style={styles.meta}>Parcelas de dívidas e faturas, sem o gasto variável do cartão.</Text>
       </Card>
 
       <Card>
@@ -58,7 +64,6 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
               </View>
               <Text style={styles.meta}>
                 {v.payoffAmount === null ? 'Não permite quitar antes' : v.quoted ? 'Valor cotado com o credor' : 'Estimado pelo saldo do contrato; toque para informar a cotação'}
-                {v.monthlyReturn !== null ? ` · rende ${pct(v.monthlyReturn)} a.m.` : ''}
               </Text>
               {reading && <Pill tone={reading.tone}>{reading.label}</Pill>}
               <Text style={styles.why}>{debtWhy(v, ctx)}</Text>
@@ -78,12 +83,15 @@ export function QuitacaoScreen({ navigation }: NativeStackScreenProps<PlanoStack
   );
 }
 
-// Secondary text uses #6b6b6b (5.3:1 on white) instead of opacity, for WCAG 1.4.3.
+// Secondary text uses COLORS.placeholder, not opacity (contrast holds on the grey cards).
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 12 },
   label: { fontSize: 13, color: COLORS.placeholder },
   body: { fontSize: 15, lineHeight: 21, color: COLORS.text },
   strong: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  figures: { flexDirection: 'row', gap: 16, marginVertical: 4 },
+  figure: { flex: 1, gap: 2 },
+  figureValue: { fontSize: 20, fontWeight: '600', fontVariant: ['tabular-nums'], color: COLORS.text },
   debt: { gap: 6, paddingVertical: 12, minHeight: 44, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: COLORS.border },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
   name: { flex: 1, fontSize: 16, fontWeight: '600', color: COLORS.text },

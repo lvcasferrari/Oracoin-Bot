@@ -21,7 +21,7 @@ import {
 import { listScoreHistory, saveScoreSnapshot, type ScoreSnapshot } from '../db/repos';
 import { resetAll } from '../db/reset';
 import { Disclaimer } from '../components/Disclaimer';
-import { Button, FormError, trySave, useBusy } from '../components/form';
+import { Button, COLORS, FormError, trySave, useBusy } from '../components/form';
 import { Card, Money, Pill } from '../components/ui';
 import { shortMonth } from '../lib/dateInput';
 import { logError } from '../lib/log';
@@ -273,7 +273,7 @@ function DeleteAllData({ navigation }: { navigation: NavigationProp<ParamListBas
             value={typed}
             onChangeText={setTyped}
             placeholder="Digite APAGAR"
-            placeholderTextColor="#6b6b6b"
+            placeholderTextColor={COLORS.placeholder}
             autoCapitalize="characters"
             accessibilityLabel="Digite APAGAR para confirmar"
           />

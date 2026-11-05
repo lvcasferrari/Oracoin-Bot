@@ -173,7 +173,7 @@ function Metric({ label, value }: { label: string; value: number }) {
   );
 }
 
-// Secondary text uses #6b6b6b (5.3:1 on white) instead of opacity, for WCAG 1.4.3.
+// Secondary text uses COLORS.placeholder, not opacity (contrast holds on the grey cards).
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 12 },
   label: { fontSize: 13, color: COLORS.placeholder, marginBottom: 4 },

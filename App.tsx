@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootTabs } from './src/navigation/RootTabs';
@@ -11,10 +11,24 @@ import { DataGate } from './src/state/DataGate';
 
 const Root = createNativeStackNavigator<RootStackParamList>();
 
+// Deep links into the payoff screens (e.g. com.lvcasferrari.lifestrategicplan://plano/quitacao); the scheme is the bundle id Expo registers.
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['com.lvcasferrari.lifestrategicplan://'],
+  config: {
+    screens: {
+      Tabs: {
+        screens: {
+          Plano: { screens: { PlanoHome: 'plano', Quitacao: 'plano/quitacao', Estrategias: 'plano/estrategias', Roteiro: 'plano/roteiro' } },
+        },
+      },
+    },
+  },
+};
+
 function RootNavigator() {
   const { profile, meta } = useReadyData();
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Root.Navigator initialRouteName={initialRoute(meta.onboardedAt, isEmptyProfile(profile))}>
         <Root.Screen name="Tabs" component={RootTabs} options={{ headerShown: false }} />
         <Root.Screen name="Onboarding" component={OnboardingScreen} options={{ title: 'Seu mês em 3 minutos', presentation: 'modal' }} />
