@@ -5,7 +5,7 @@ import { Disclaimer } from '../components/Disclaimer';
 import { DueCalendar } from '../components/DueCalendar';
 import { EmptyState } from '../components/EmptyState';
 import { announce } from '../components/form';
-import { BarChart, Card, Money, Pill } from '../components/ui';
+import { BarChart, Card, formatBRL, Money, Pill } from '../components/ui';
 import { shortMonth } from '../lib/dateInput';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
 
@@ -59,23 +59,20 @@ export function FluxoScreen() {
             {critical && <Pill tone={critical.lowBalance < 0 ? 'risk' : 'warn'}>Crítico: {shortMonth(critical.month)}</Pill>}
           </View>
           <BarChart
-            bars={rows.map((r) => ({ key: r.month, label: shortMonth(r.month).slice(0, 3), value: r.endBalance, highlight: critical?.month === r.month }))}
+            // Every third month labelled: 18 labels do not fit and truncate to noise.
+            bars={rows.map((r, i) => ({ key: r.month, label: shortMonth(r.month), axis: i % 3 === 0 ? shortMonth(r.month).slice(0, 3) : '', value: r.endBalance, highlight: critical?.month === r.month }))}
             onPress={(b) => openDay(b.key)}
           />
           <View style={[styles.tableRow, styles.tableHead]}>
             <Text style={styles.cellMonth}>Mês</Text>
-            <Text style={styles.cell}>Entra</Text>
-            <Text style={styles.cell}>Sai</Text>
-            <Text style={styles.cell}>Sobra</Text>
+            <Text style={styles.cell}>Sobra do mês</Text>
           </View>
           {rows.map((r) => (
-            <Pressable key={r.month} style={styles.tableRow} onPress={() => openDay(r.month)} accessibilityRole="button" accessibilityHint="Abre o dia a dia deste mês">
+            <Pressable key={r.month} style={styles.tableRow} onPress={() => openDay(r.month)} accessibilityRole="button" accessibilityHint="Abre o dia a dia deste mês" accessibilityLabel={`${shortMonth(r.month)}: entra ${formatBRL(r.income)}, sai ${formatBRL(cents(r.outflows + r.invoices + r.debts))}, sobra ${formatBRL(r.margin)}`}>
               <Text style={styles.cellMonth}>
                 {shortMonth(r.month)}
                 {r.estimated ? '*' : ''}
               </Text>
-              <Money value={r.income} style={styles.cell} />
-              <Money value={cents(r.outflows + r.invoices + r.debts)} style={styles.cell} />
               <Money value={r.margin} style={[styles.cell, r.margin < 0 && styles.negative]} />
             </Pressable>
           ))}
@@ -100,7 +97,6 @@ export function FluxoScreen() {
       {mode === 'dia' && <DailyList month={shown} />}
       {mode === 'venc' && <DueCalendar events={dueCalendar(profile, shown, today)} />}
 
-      <Text style={styles.hint}>Faturas entram no dia do vencimento, não no dia da compra.</Text>
       <Disclaimer />
     </ScrollView>
   );
@@ -158,9 +154,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   right: { alignItems: 'flex-end' },
   balance: { fontWeight: '600' },
-  hint: { fontSize: 12, opacity: 0.6 },
+  hint: { fontSize: 13, color: '#595959' },
   tableRow: { flexDirection: 'row', alignItems: 'center', minHeight: 44, borderTopWidth: StyleSheet.hairlineWidth, borderColor: '#8884' },
   tableHead: { minHeight: 32, marginTop: 8 },
   cellMonth: { flex: 1.2, fontSize: 14, fontWeight: '600' },
-  cell: { flex: 1, fontSize: 13, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  cell: { flex: 1, fontSize: 15, textAlign: 'right', fontVariant: ['tabular-nums'] },
 });

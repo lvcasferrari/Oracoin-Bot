@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { criticalMonth, type ScenarioResult, type Verdict } from '../../engine';
 import { Disclaimer } from '../../components/Disclaimer';
 import { useAnnounce } from '../../components/form';
@@ -26,6 +26,7 @@ export function ScenarioResultCard({ result, actions }: { result: ScenarioResult
   const critical = criticalMonth(result.result.monthly);
   const before = result.baseline.critical;
   const after = result.result.critical;
+  const [details, setDetails] = useState(false);
 
   return (
     <Card>
@@ -77,6 +78,17 @@ export function ScenarioResultCard({ result, actions }: { result: ScenarioResult
           Menor saldo previsto: <Money value={before.balance} /> hoje → <Money value={after.balance} style={after.balance < 0 ? styles.negative : undefined} /> com isso ({formatDateBR(after.date)}).
         </Text>
       )}
+      {/* 5. Three exits */}
+      <Text style={styles.section} accessibilityRole="header">
+        Três saídas
+      </Text>
+      {actions ?? <Text style={styles.hint}>Em breve: saídas com custo calculado.</Text>}
+
+      <Pressable onPress={() => setDetails((d) => !d)} accessibilityRole="button" style={styles.link}>
+        <Text style={styles.linkText}>{details ? 'Ocultar detalhes' : 'Ver detalhes'}</Text>
+      </Pressable>
+      {details && (
+        <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timeline}>
         {result.result.monthly.map((m) => {
           const isCritical = critical?.month === m.month;
@@ -118,12 +130,6 @@ export function ScenarioResultCard({ result, actions }: { result: ScenarioResult
           </Text>
         ))}
 
-      {/* 5. Three exits */}
-      <Text style={styles.section} accessibilityRole="header">
-        Três saídas
-      </Text>
-      {actions ?? <Text style={styles.hint}>Em breve: saídas com custo calculado.</Text>}
-
       {/* 6. Assumptions and uncertainty */}
       <Text style={styles.section} accessibilityRole="header">
         Premissas
@@ -136,7 +142,9 @@ export function ScenarioResultCard({ result, actions }: { result: ScenarioResult
           {PARAM_INFO[a.key].label}: {displayParam(a.key, a.value)} ({a.source})
         </Text>
       ))}
-      <Text style={styles.hint}>Dá para mudar as premissas em Plano.</Text>
+
+        </>
+      )}
 
       {/* 7. Disclaimer */}
       <Disclaimer />
@@ -148,7 +156,9 @@ const styles = StyleSheet.create({
   headline: { fontSize: 19, fontWeight: '600' },
   body: { fontSize: 15 },
   section: { fontSize: 15, fontWeight: '600', marginTop: 8 },
-  hint: { fontSize: 12, opacity: 0.7 },
+  hint: { fontSize: 13, lineHeight: 18, color: '#595959' },
+  link: { minHeight: 44, justifyContent: 'center' },
+  linkText: { fontSize: 15, color: '#265a40', fontWeight: '600' },
   negative: { color: '#b3261e', fontWeight: '600' },
   timeline: { gap: 8, paddingVertical: 6 },
   month: { minWidth: 92, padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#767676' },

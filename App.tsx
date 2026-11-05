@@ -11,14 +11,28 @@ import { DataGate } from './src/state/DataGate';
 
 const Root = createNativeStackNavigator<RootStackParamList>();
 
-// Deep links into the payoff screens (e.g. com.lvcasferrari.lifestrategicplan://plano/quitacao); the scheme is the bundle id Expo registers.
+// Deep links into the tabs and Plano screens (e.g. com.lvcasferrari.lifestrategicplan://plano/quitacao); the scheme is the bundle id Expo registers.
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['com.lvcasferrari.lifestrategicplan://'],
   config: {
     screens: {
       Tabs: {
         screens: {
-          Plano: { screens: { PlanoHome: 'plano', Quitacao: 'plano/quitacao', Estrategias: 'plano/estrategias', Roteiro: 'plano/roteiro', Historico: 'plano/historico' } },
+          Hoje: { screens: { HojeHome: 'hoje' } },
+          Fluxo: { screens: { FluxoHome: 'fluxo' } },
+          Bancos: { screens: { BancosHome: 'bancos' } },
+          Plano: {
+            screens: {
+              PlanoHome: 'plano',
+              Quitacao: 'plano/quitacao',
+              Estrategias: 'plano/estrategias',
+              Roteiro: 'plano/roteiro',
+              Historico: 'plano/historico',
+              Premissas: 'plano/premissas',
+              Pontes: 'plano/pontes',
+              Dados: 'plano/dados',
+            },
+          },
         },
       },
     },

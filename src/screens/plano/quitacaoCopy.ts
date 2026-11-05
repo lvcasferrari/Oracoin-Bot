@@ -38,11 +38,14 @@ export function bridgeLabel(b: Bridge): string {
 
 const list = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} e ${names.at(-1)}`);
 
-/** "Quitar Carro e Pix · Crédito ponte: Banco · gasto variável 10% menor". */
+/** Short name for a bridge inside a strategy title; the meta keeps "não oferta" (guardrail). */
+const bridgeShort = (b: Bridge) => (b.kind === 'meta' ? `meta ${pct(b.monthlyRate)} a.m. (não oferta)` : b.kind === 'parcelar_fatura' ? 'parcelar fatura' : `ponte ${b.name}`);
+
+/** "Quitar Carro e Pix · ponte Banco · gasto −10%". */
 export function strategyTitle(s: Pick<Strategy, 'payoffs' | 'bridge' | 'reducedVariable'>): string {
   const parts = [s.payoffs.length ? `Quitar ${list(s.payoffs.map((p) => p.debt.name))}` : 'Sem quitações'];
-  if (s.bridge) parts.push(bridgeLabel(s.bridge));
-  if (s.reducedVariable) parts.push('gasto variável 10% menor');
+  if (s.bridge) parts.push(bridgeShort(s.bridge));
+  if (s.reducedVariable) parts.push('gasto −10%');
   return parts.join(' · ');
 }
 

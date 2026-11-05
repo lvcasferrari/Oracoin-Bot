@@ -6,14 +6,11 @@ import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-n
 import {
   commitmentRatio,
   contributions,
-  forecastError,
   goalTimeline,
   healthScore,
   monthOf,
   onTrack,
   param,
-  paramRow,
-  PARAM_KEYS,
   scoreTrend,
   type Parameter,
   type ScorePart,
@@ -22,10 +19,9 @@ import { listScoreHistory, saveScoreSnapshot, type ScoreSnapshot } from '../db/r
 import { resetAll } from '../db/reset';
 import { Disclaimer } from '../components/Disclaimer';
 import { Button, COLORS, FormError, trySave, useBusy } from '../components/form';
-import { Card, Money, Pill } from '../components/ui';
+import { Card, ListRow } from '../components/ui';
 import { shortMonth } from '../lib/dateInput';
 import { logError } from '../lib/log';
-import { displayParam, PARAM_INFO } from '../lib/paramInfo';
 import type { PlanoStackParamList, RootStackParamList, TabParamList } from '../navigation/types';
 import { isEmptyProfile, useReadyData } from '../state/AppData';
 
@@ -68,8 +64,6 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
   const timeline = goalTimeline(profile.goals, contributions(profile, today));
   const ratio = commitmentRatio(profile, month, today);
   const current = band(ratio, profile.parameters, today);
-  const quality = forecastError(profile.invoices);
-  const groups = [...new Set(PARAM_KEYS.map((k) => PARAM_INFO[k].group))];
   const partText = (k: ScorePart) => (k === 'metas' && score.noGoals ? 'sem metas ainda' : `${score.parts[k]} de 100`);
 
   return (
@@ -79,30 +73,25 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
           <Text style={styles.label} accessibilityRole="header">
             Saúde financeira
           </Text>
-          <Text style={styles.headline}>{trend ?? `Primeira medição: ${score.total} de 100.`}</Text>
-          {trend && <Text style={styles.hint}>Hoje: {score.total} de 100.</Text>}
-          {(Object.keys(PART_LABELS) as ScorePart[]).map((k) => (
-            <View key={k} style={styles.bar} accessible accessibilityLabel={`${PART_LABELS[k]}: ${partText(k)}`}>
-              <View style={styles.barHead}>
-                <Text style={styles.body}>{PART_LABELS[k]}</Text>
-                <Text style={styles.body}>{k === 'metas' && score.noGoals ? 'sem metas ainda' : score.parts[k]}</Text>
-              </View>
-              <View style={styles.track}>
-                <View style={[styles.fill, { width: `${score.parts[k]}%` }]} />
-              </View>
-            </View>
-          ))}
+          <Text style={styles.headline}>{score.total} de 100</Text>
+          {trend && <Text style={styles.detail}>{trend}</Text>}
           <Text style={styles.body}>{score.topImprovement}</Text>
+          {why &&
+            (Object.keys(PART_LABELS) as ScorePart[]).map((k) => (
+              <View key={k} style={styles.bar} accessible accessibilityLabel={`${PART_LABELS[k]}: ${partText(k)}`}>
+                <View style={styles.barHead}>
+                  <Text style={styles.body}>{PART_LABELS[k]}</Text>
+                  <Text style={styles.body}>{k === 'metas' && score.noGoals ? '—' : score.parts[k]}</Text>
+                </View>
+                <View style={styles.track}>
+                  <View style={[styles.fill, { width: `${score.parts[k]}%` }]} />
+                </View>
+              </View>
+            ))}
+          {why && <Text style={styles.detail}>Comprometimento: {Number.isFinite(ratio) ? `${Math.round(ratio * 100)}% da renda` : 'sem renda no mês'} · {current.label}</Text>}
           <Pressable onPress={() => setWhy((w) => !w)} accessibilityRole="button" style={styles.link}>
-            <Text style={styles.linkText}>{why ? 'Esconder explicação' : 'Por que você está vendo isto'}</Text>
+            <Text style={styles.linkText}>{why ? 'Ocultar detalhes' : 'Ver detalhes'}</Text>
           </Pressable>
-          {why && (
-            <Text style={styles.hint}>
-              Referência do app, baseada nos quatro elementos de bem-estar financeiro do CFPB. Controle: sobra do mês sobre a renda. Colchão: meses de
-              despesas essenciais que o saldo cobre. Metas: quantas estão no ritmo do prazo. Liberdade: quanto faturas e dívidas levam da renda, e se
-              houve pagamento parcial de fatura recentemente. Pesos e faixas podem ser mudados em Premissas.
-            </Text>
-          )}
         </Card>
       )}
 
@@ -110,23 +99,21 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
         <Text style={styles.label} accessibilityRole="header">
           Metas
         </Text>
-        {timeline.length === 0 && <Text style={styles.body}>Nenhuma meta ainda. A sobra de cada mês vai para a meta de prioridade 1 primeiro.</Text>}
+        {timeline.length === 0 && <Text style={styles.detail}>Nenhuma meta ainda.</Text>}
         {timeline.map((t) => {
           const progress = Math.min(100, Math.round((t.goal.saved / t.goal.target) * 100));
           return (
             <Pressable key={t.goal.id} onPress={() => navigation.navigate('GoalForm', { id: t.goal.id })} accessibilityRole="button" accessibilityHint="Editar meta" style={styles.goal}>
               <View style={styles.barHead}>
-                <Text style={styles.strong}>
-                  {t.goal.priority}. {t.goal.name}
-                </Text>
-                <Money value={t.goal.target} />
+                <Text style={styles.strong}>{t.goal.name}</Text>
+                <Text style={styles.body}>{progress}%</Text>
               </View>
               <View style={styles.track}>
                 <View style={[styles.fill, { width: `${progress}%` }]} />
               </View>
-              <Text style={styles.hint}>
-                {progress}% guardado · {t.reachedMonth ? `chega em ${shortMonth(t.reachedMonth)} (estimado)` : 'não alcança nos próximos meses com a sobra atual'}
-                {t.goal.deadline ? (onTrack(t) ? ' · no prazo' : ' · depois do prazo') : ''}
+              <Text style={styles.detail}>
+                {t.reachedMonth ? `chega em ${shortMonth(t.reachedMonth)}` : 'sem previsão com a sobra atual'}
+                {t.goal.deadline && !onTrack(t) ? ' · depois do prazo' : ''}
               </Text>
             </Pressable>
           );
@@ -135,113 +122,28 @@ export function PlanoScreen({ navigation }: NativeStackScreenProps<PlanoStackPar
       </Card>
 
       <Card>
-        <Text style={styles.label} accessibilityRole="header">
-          Quitação de dívidas
-        </Text>
-        <Text style={styles.body}>
-          {profile.debts.length === 0
-            ? 'Quando houver dívidas cadastradas, veja quanto rende quitar cada uma e compare estratégias.'
-            : 'Quanto rende quitar cada dívida agora e quais combinações deixam o custo mensal menor, com os números que você informou.'}
-        </Text>
-        <Button title="Ver quitação" kind="secondary" onPress={() => navigation.navigate('Quitacao')} />
-        <Button title="Histórico do que foi pago" kind="secondary" onPress={() => navigation.navigate('Historico')} />
+        <ListRow label="Quitação de dívidas" value={profile.debts.length ? String(profile.debts.length) : undefined} onPress={() => navigation.navigate('Quitacao')} />
+        <ListRow label="Histórico de pagamentos" onPress={() => navigation.navigate('Historico')} />
+        <ListRow label="Crédito ponte" value={bridges.length ? String(bridges.length) : undefined} onPress={() => navigation.navigate('Pontes')} />
       </Card>
 
       <Card>
-        <Text style={styles.label} accessibilityRole="header">
-          Crédito ponte
-        </Text>
-        <Text style={styles.body}>Se o saldo ficar abaixo da reserva mínima, as simulações mostram como cada opção cobriria a falta. Nada aqui é oferta de crédito.</Text>
-        {bridges.map((b) => (
-          <Pressable key={b.id} style={styles.paramRow} onPress={() => navigation.navigate('BridgeForm', { id: b.id })} accessibilityRole="button" accessibilityHint="Editar opção">
-            <Text style={styles.paramLabel}>
-              {b.name}
-              {b.kind === 'meta' ? ' (meta, não oferta)' : ''}
-            </Text>
-            <Text style={styles.paramValue}>
-              {b.kind === 'parcelar_fatura' ? 'premissas' : `${(b.monthlyRate * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% a.m.`} · {b.months}x
-            </Text>
-          </Pressable>
-        ))}
-        <Button title="+ Opção" accessibilityLabel="Adicionar opção de crédito ponte" kind="secondary" onPress={() => navigation.navigate('BridgeForm')} />
-      </Card>
-
-      {!empty && (
-        <Card>
-          <Text style={styles.label} accessibilityRole="header">
-            Comprometimento do mês
-          </Text>
-          <Text style={styles.headline}>{Number.isFinite(ratio) ? `${Math.round(ratio * 100)}% da renda` : 'Sem renda no mês'}</Text>
-          <Pill tone={current.tone}>{current.label}</Pill>
-          <Text style={styles.hint}>Faturas e dívidas sobre a renda líquida. Faixas são referência do app, não padrão oficial.</Text>
-          {quality && (
-            <Text style={styles.hint}>
-              Qualidade da previsão: as faturas vieram, em média, <Money value={quality.meanAbs} /> ({Math.round(quality.meanPct * 100)}%) diferentes do estimado (
-              {quality.count} {quality.count === 1 ? 'fatura' : 'faturas'}).
-            </Text>
-          )}
-        </Card>
-      )}
-
-      <Card>
-        <Text style={styles.label} accessibilityRole="header">
-          Premissas (editáveis)
-        </Text>
-        {groups.map((g) => (
-          <View key={g} style={styles.group}>
-            <Text style={styles.strong}>{g}</Text>
-            {PARAM_KEYS.filter((k) => PARAM_INFO[k].group === g).map((k) => {
-              const row = paramRow(profile.parameters, k, today);
-              return (
-                <Pressable key={k} style={styles.paramRow} onPress={() => navigation.navigate('ParameterForm', { key: k })} accessibilityRole="button" accessibilityHint="Editar premissa">
-                  <Text style={styles.paramLabel}>{PARAM_INFO[k].label}</Text>
-                  <Text style={styles.paramValue}>{displayParam(k, row.value)}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </Card>
-
-      <Card>
-        <Text style={styles.label} accessibilityRole="header">
-          Recorrências
-        </Text>
-        <Button
-          title="Ver entradas e saídas"
-          kind="secondary"
+        <ListRow label="Premissas" onPress={() => navigation.navigate('Premissas')} />
+        <ListRow
+          label="Entradas e saídas"
           // initial: false keeps FluxoHome under Lançamentos even if the Fluxo tab was never opened.
           onPress={() => navigation.getParent<BottomTabNavigationProp<TabParamList>>()?.navigate('Fluxo', { screen: 'Lancamentos', initial: false })}
         />
+        <ListRow label="Importar planilha" onPress={() => navigation.navigate('Import')} />
+        <ListRow label="Privacidade e dados" onPress={() => navigation.navigate('Dados')} />
       </Card>
-
-      <Card>
-        <Text style={styles.label} accessibilityRole="header">
-          Importar planilha
-        </Text>
-        <Text style={styles.body}>Traga entradas, saídas, cartões, parcelas, dívidas e cenários de uma planilha .xlsx.</Text>
-        <Button title="Importar planilha" kind="secondary" onPress={() => navigation.navigate('Import')} />
-      </Card>
-
-      <Card>
-        <Text style={styles.label} accessibilityRole="header">
-          Privacidade
-        </Text>
-        <Text style={styles.body}>
-          Seus dados ficam só neste aparelho: nada é enviado para servidores. O backup do sistema (iCloud ou Google), se estiver ligado, pode guardar uma
-          cópia protegida pela sua conta. Você pode apagar tudo abaixo quando quiser.
-        </Text>
-      </Card>
-
-      <DeleteAllData navigation={navigation} />
-
       <Disclaimer />
     </ScrollView>
   );
 }
 
 /** "Apagar todos os meus dados" (LGPD). Its own component so typing does not recompute the score. */
-function DeleteAllData({ navigation }: { navigation: NavigationProp<ParamListBase> }) {
+export function DeleteAllData({ navigation }: { navigation: NavigationProp<ParamListBase> }) {
   const { db, today, refresh } = useReadyData();
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState('');
@@ -298,10 +200,11 @@ function DeleteAllData({ navigation }: { navigation: NavigationProp<ParamListBas
 
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 12 },
-  label: { fontSize: 13, opacity: 0.75 },
+  label: { fontSize: 13, color: COLORS.placeholder },
   headline: { fontSize: 22, fontWeight: '600' },
   body: { fontSize: 15 },
   strong: { fontSize: 15, fontWeight: '600' },
+  detail: { fontSize: 13, color: COLORS.placeholder },
   hint: { fontSize: 12, opacity: 0.75 },
   bar: { gap: 4 },
   barHead: { flexDirection: 'row', justifyContent: 'space-between' },

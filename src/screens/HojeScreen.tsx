@@ -5,7 +5,7 @@ import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthOf, pr
 import { ActionsList } from '../components/ActionsList';
 import { Disclaimer } from '../components/Disclaimer';
 import { EmptyState } from '../components/EmptyState';
-import { Button } from '../components/form';
+import { Button, COLORS } from '../components/form';
 import { BarChart, Money, Card, Pill } from '../components/ui';
 import { formatDateBR } from '../lib/dateInput';
 import type { HojeStackParamList, TabParamList } from '../navigation/types';
@@ -45,9 +45,9 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
     <ScrollView contentContainerStyle={styles.page}>
       {toConfirm.map((t) => (
         <Card key={`${t.card.id}-${t.dueMonth}`}>
-          <Text style={styles.strong}>Sua fatura do {t.card.bank} fechou. Confirma o valor?</Text>
-          <Text style={styles.body}>
-            Estimamos <Money value={t.estimate} />. Vence em {formatDateBR(t.dueDate)}.
+          <Text style={styles.strong}>Fatura {t.card.bank} fechou</Text>
+          <Text style={styles.detail}>
+            Estimado <Money value={t.estimate} /> · vence {formatDateBR(t.dueDate)}
           </Text>
           <Button title="Confirmar valor" onPress={() => navigation.navigate('ConfirmInvoice', { cardId: t.card.id, dueMonth: t.dueMonth })} />
         </Card>
@@ -62,13 +62,13 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
       {next && balanceOnDue !== null && (
         <Card>
           <Text style={styles.label}>Próximo vencimento</Text>
-          <Text style={styles.body}>
-            {next.label}: {formatDateBR(next.date)}
+          <Money value={-next.amount} style={styles.amount} />
+          <Text style={styles.detail}>
+            {next.label} · {formatDateBR(next.date)}
+            {next.estimated ? ' · estimado' : ''}
           </Text>
-          <Money value={-next.amount} style={styles.strong} />
-          {next.estimated && <Text style={styles.hint}>Estimado: parcelas previstas mais a média do cartão.</Text>}
-          <Text style={styles.body}>
-            Saldo depois: <Money value={balanceOnDue} style={balanceOnDue < 0 ? styles.negative : undefined} />
+          <Text style={styles.detail}>
+            Saldo depois: <Money value={balanceOnDue} style={balanceOnDue < 0 ? styles.negative : styles.detailStrong} />
           </Text>
           {balanceOnDue < 0 && (
             <>
@@ -86,7 +86,7 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
 
       {topAction && (
         <Card>
-          <Text style={styles.label}>Uma ação sugerida</Text>
+          <Text style={styles.label}>Sugestão</Text>
           <ActionsList actions={[topAction]} />
         </Card>
       )}
@@ -95,8 +95,8 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
         <Card>
           <Text style={styles.label}>Saldo ao longo do mês</Text>
           <BarChart bars={dayBars} />
-          <Text style={styles.body}>
-            Mais baixo: dia {low.date.slice(8)}, <Money value={low.balance} style={low.balance < 0 ? styles.negative : undefined} />
+          <Text style={styles.detail}>
+            Mais baixo no dia {low.date.slice(8)}: <Money value={low.balance} style={low.balance < 0 ? styles.negative : styles.detailStrong} />
           </Text>
         </Card>
       )}
@@ -108,10 +108,11 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
 
 const styles = StyleSheet.create({
   page: { padding: 16, gap: 12 },
-  label: { fontSize: 13, opacity: 0.6 },
-  big: { fontSize: 32, fontWeight: '600' },
-  strong: { fontSize: 17, fontWeight: '600' },
-  body: { fontSize: 16 },
-  hint: { fontSize: 12, opacity: 0.6 },
+  label: { fontSize: 13, color: COLORS.placeholder },
+  big: { fontSize: 32, fontWeight: '600', color: COLORS.text, fontVariant: ['tabular-nums'] },
+  amount: { fontSize: 24, fontWeight: '600', color: COLORS.text, fontVariant: ['tabular-nums'] },
+  strong: { fontSize: 17, fontWeight: '600', color: COLORS.text },
+  detail: { fontSize: 14, color: COLORS.placeholder },
+  detailStrong: { fontWeight: '600', color: COLORS.text },
   negative: { color: '#b3261e', fontWeight: '600' },
 });
