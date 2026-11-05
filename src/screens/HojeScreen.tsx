@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { Text } from '../components/Text';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { buildEvents, cashProjection, freeMargin, invoicesToConfirm, monthlySummary, monthOf, profileBalance, suggestActions } from '../engine';
@@ -63,10 +64,10 @@ export function HojeScreen({ navigation }: NativeStackScreenProps<HojeStackParam
           <StackBar
             total={Math.max(row.income, row.outflows + row.invoices + row.debts)}
             parts={[
-              { key: 'contas', label: 'Contas', value: row.outflows, color: '#8a6d1f' },
-              { key: 'faturas', label: 'Faturas', value: row.invoices, color: '#2f5d8a' },
-              { key: 'dividas', label: 'Dívidas', value: row.debts, color: '#9c4221' },
-              { key: 'sobra', label: 'Sobra', value: Math.max(0, row.margin), color: '#2f6f4f' },
+              { key: 'contas', label: 'Contas', value: row.outflows, color: '#e8c36a' },
+              { key: 'faturas', label: 'Faturas', value: row.invoices, color: '#6fa8ff' },
+              { key: 'dividas', label: 'Dívidas', value: row.debts, color: '#ff9f6e' },
+              { key: 'sobra', label: 'Sobra', value: Math.max(0, row.margin), color: '#5fd4a0' },
             ]}
           />
         )}
@@ -133,5 +134,5 @@ const styles = StyleSheet.create({
   strong: { fontSize: 17, fontWeight: '600', color: COLORS.text },
   detail: { fontSize: 14, color: COLORS.placeholder },
   detailStrong: { fontWeight: '600', color: COLORS.text },
-  negative: { color: '#b3261e', fontWeight: '600' },
+  negative: { color: '#ff8a80', fontWeight: '600' },
 });

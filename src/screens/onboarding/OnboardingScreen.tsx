@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { setOnboarded } from '../../db/repos';
 import { Button, FormError, FormScreen, trySave, useAnnounce, useBusy } from '../../components/form';
@@ -108,11 +109,11 @@ export function OnboardingScreen({ navigation }: NativeStackScreenProps<RootStac
 const styles = StyleSheet.create({
   progress: { flexDirection: 'row', gap: 6 },
   segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#8883' },
-  segmentDone: { backgroundColor: '#2f6f4f' },
+  segmentDone: { backgroundColor: '#5fd4a0' },
   title: { fontSize: 24, fontWeight: '600' },
   body: { fontSize: 15 },
   hint: { fontSize: 13, opacity: 0.7 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   later: { minHeight: 44, justifyContent: 'center' },
-  link: { fontSize: 15, color: '#2f6f4f', fontWeight: '600' },
+  link: { fontSize: 15, color: '#5fd4a0', fontWeight: '600' },
 });

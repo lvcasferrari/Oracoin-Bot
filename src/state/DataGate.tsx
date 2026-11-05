@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useAnnounce } from '../components/form';
 import { LOAD_ERROR } from '../lib/copy';
 import { useAppData } from './AppData';
@@ -29,6 +30,6 @@ export function DataGate({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
   text: { fontSize: 16, textAlign: 'center' },
-  button: { minHeight: 44, paddingHorizontal: 20, justifyContent: 'center', borderRadius: 12, backgroundColor: '#2f6f4f' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  button: { minHeight: 44, paddingHorizontal: 20, justifyContent: 'center', borderRadius: 12, backgroundColor: '#5fd4a0' },
+  buttonText: { color: '#06140e', fontSize: 16, fontWeight: '600' },
 });

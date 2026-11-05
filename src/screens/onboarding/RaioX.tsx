@@ -1,4 +1,5 @@
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from '../../components/Text';
 import { addMonths, commitmentRatio, dailyView, dueCalendar, freeMargin, monthOf, param } from '../../engine';
 import { Disclaimer } from '../../components/Disclaimer';
 import { DueCalendar } from '../../components/DueCalendar';

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { addMonths, monthOf, param, type Installment } from '../../engine';
 import { replaceCardInstallments } from '../../db/repos';

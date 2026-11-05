@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from '../../components/Text';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { dueDate, projectedInvoice } from '../../engine';
 import { saveInvoice } from '../../db/repos';

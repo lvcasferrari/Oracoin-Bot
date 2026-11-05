@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import type { Action } from '../engine';
 import { displayParam, PARAM_INFO } from '../lib/paramInfo';
 import { Money } from './ui';
@@ -53,9 +54,9 @@ const styles = StyleSheet.create({
   list: { gap: 10 },
   // Flat inside its Card: no tinted box (cards are never nested).
   item: { gap: 4 },
-  title: { fontSize: 16, fontWeight: '600', color: '#1f1f1f' },
-  body: { fontSize: 15, lineHeight: 21, color: '#1f1f1f' },
-  hint: { fontSize: 13, lineHeight: 18, color: '#595959' },
+  title: { fontSize: 16, fontWeight: '600', color: '#eef3f1' },
+  body: { fontSize: 15, lineHeight: 21, color: '#eef3f1' },
+  hint: { fontSize: 13, lineHeight: 18, color: '#a3b1ac' },
   link: { minHeight: 44, justifyContent: 'center' },
-  linkText: { fontSize: 14, color: '#265a40', fontWeight: '500' },
+  linkText: { fontSize: 14, color: '#7ee2b4', fontWeight: '500' },
 });
